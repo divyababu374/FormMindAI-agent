@@ -19,3 +19,4 @@ class User(Base):
 
     # Relationships
     forms = relationship("Form", back_populates="user", cascade="all, delete-orphan")
+    connected_accounts = relationship("ConnectedAccount", back_populates="user", cascade="all, delete-orphan")

@@ -14,6 +14,7 @@ class Form(Base):
     source_type = Column(String(50), default="google_form")  # google_form, google_sheet, file_upload, demo
     google_form_id = Column(String(255), nullable=True)
     google_sheet_id = Column(String(255), nullable=True)
+    connected_email = Column(String(255), nullable=True, index=True)
     
     total_responses_count = Column(Integer, default=0)
     questions_count = Column(Integer, default=0)

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/forms/{form_id}", tags=["Reports & File Exports"])
 def _get_form_and_data(form_id: str, current_user: User, db: Session):
     form = db.query(Form).filter(
         Form.id == form_id,
-        or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default")
+        or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default", Form.connected_email == current_user.email)
     ).first()
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")

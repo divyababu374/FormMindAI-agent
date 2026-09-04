@@ -2,10 +2,12 @@ import uuid
 import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form as FastForm, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.models.form import Form
+from app.models.account import ConnectedAccount, ConnectedDriveForm
 from app.models.question import FormQuestion
 from app.models.response import FormResponse, ResponseAnswer
 from app.models.analysis import FormAnalysis
@@ -84,11 +86,24 @@ def _process_and_save_dataset(dataset: dict, user: User, db: Session, source_url
         ai_provider_name = "DeterministicEngine"
 
     try:
+        # Determine connected email for this user
+        conn_email = None
+        if user and user.email and "@" in user.email and not user.email.endswith("@demo.formmind.ai"):
+            conn_email = user.email.strip().lower()
+        elif user:
+            acc = db.query(ConnectedAccount).filter(
+                ConnectedAccount.user_id == user.id,
+                ConnectedAccount.is_active == True
+            ).first()
+            if acc and acc.email:
+                conn_email = acc.email.strip().lower()
+
         # 3. Save Form Record
         form_id = str(uuid.uuid4())
         form = Form(
             id=form_id,
             user_id=user.id,
+            connected_email=conn_email,
             title=dataset.get("title", "Survey Form"),
             description=dataset.get("description", ""),
             source_url=source_url or dataset.get("source_url"),
@@ -282,31 +297,136 @@ async def upload_form_file(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse uploaded dataset: {str(e)}")
 
+def _get_form_for_user(form_id: str, current_user: User, db: Session) -> Optional[Form]:
+    connected_emails = []
+    if current_user and current_user.email:
+        connected_emails.append(current_user.email.strip().lower())
+
+    if current_user:
+        conn_accs = db.query(ConnectedAccount).filter(
+            ConnectedAccount.user_id == current_user.id,
+            ConnectedAccount.is_active == True
+        ).all()
+        for acc in conn_accs:
+            if acc.email and acc.email.strip().lower() not in connected_emails:
+                connected_emails.append(acc.email.strip().lower())
+
+    user_id_val = current_user.id if current_user else "demo_user_default"
+    conditions = [
+        Form.user_id == user_id_val,
+        Form.user_id == "demo_user_default"
+    ]
+    if connected_emails:
+        conditions.append(Form.connected_email.in_(connected_emails))
+
+    return db.query(Form).filter(
+        Form.id == form_id,
+        or_(*conditions)
+    ).first()
+
 @router.get("", response_model=List[FormSummaryResponse])
 def get_user_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
-    Lists all forms belonging to the current user.
+    Lists all forms belonging to the current user or their connected email.
     """
-    forms = db.query(Form).filter(Form.user_id == current_user.id).order_by(Form.created_at.desc()).all()
+    connected_emails = []
+    if current_user and current_user.email:
+        connected_emails.append(current_user.email.strip().lower())
+
+    if current_user:
+        conn_accs = db.query(ConnectedAccount).filter(
+            ConnectedAccount.user_id == current_user.id,
+            ConnectedAccount.is_active == True
+        ).all()
+        for acc in conn_accs:
+            if acc.email and acc.email.strip().lower() not in connected_emails:
+                connected_emails.append(acc.email.strip().lower())
+
+    user_id_val = current_user.id if current_user else "demo_user_default"
+    conditions = [
+        Form.user_id == user_id_val,
+        Form.user_id == "demo_user_default"
+    ]
+    if connected_emails:
+        conditions.append(Form.connected_email.in_(connected_emails))
+
+    forms = db.query(Form).filter(or_(*conditions)).order_by(Form.created_at.desc()).all()
     return forms
 
 @router.get("/google/drive-forms")
 def get_user_google_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
-    Lists Google Forms from the connected user's Google Drive.
+    Lists Google Forms from the connected user's Google Drive and persists them to the database.
     """
     token = get_valid_google_token(current_user, db) if current_user.is_google_connected else current_user.google_access_token
     if not token:
-        raise HTTPException(status_code=401, detail="Google account is not connected. Please connect your Google account.")
-    forms = GoogleConnector.list_user_drive_forms(token)
-    return forms
+        conn_acc = db.query(ConnectedAccount).filter(
+            ConnectedAccount.user_id == current_user.id,
+            ConnectedAccount.provider == "google",
+            ConnectedAccount.is_active == True
+        ).first()
+        if conn_acc and conn_acc.access_token:
+            token = conn_acc.access_token
+
+    drive_forms = []
+    if token:
+        try:
+            drive_forms = GoogleConnector.list_user_drive_forms(token)
+            conn_email = current_user.email
+            for df in drive_forms:
+                existing_cdf = db.query(ConnectedDriveForm).filter(
+                    ConnectedDriveForm.user_id == current_user.id,
+                    ConnectedDriveForm.google_form_id == df["id"]
+                ).first()
+                if existing_cdf:
+                    existing_cdf.title = df.get("name", existing_cdf.title)
+                    existing_cdf.edit_url = df.get("edit_url", existing_cdf.edit_url)
+                    existing_cdf.view_url = df.get("view_url", existing_cdf.view_url)
+                    existing_cdf.modified_time = df.get("modified_time", existing_cdf.modified_time)
+                else:
+                    new_cdf = ConnectedDriveForm(
+                        id=str(uuid.uuid4()),
+                        user_id=current_user.id,
+                        connected_email=conn_email,
+                        google_form_id=df["id"],
+                        title=df.get("name", "Google Form"),
+                        edit_url=df.get("edit_url"),
+                        view_url=df.get("view_url"),
+                        created_time=df.get("created_time"),
+                        modified_time=df.get("modified_time")
+                    )
+                    db.add(new_cdf)
+            db.commit()
+        except Exception:
+            pass
+
+    if not drive_forms:
+        saved_drive_forms = db.query(ConnectedDriveForm).filter(
+            or_(
+                ConnectedDriveForm.user_id == current_user.id,
+                ConnectedDriveForm.connected_email == current_user.email
+            )
+        ).all()
+        drive_forms = [
+            {
+                "id": sdf.google_form_id,
+                "name": sdf.title,
+                "edit_url": sdf.edit_url,
+                "view_url": sdf.view_url,
+                "created_time": sdf.created_time,
+                "modified_time": sdf.modified_time
+            }
+            for sdf in saved_drive_forms
+        ]
+
+    return drive_forms
 
 @router.get("/{form_id}", response_model=FormDetailResponse)
 def get_form_detail(form_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Retrieves full form details with question schema.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     return form
@@ -316,7 +436,7 @@ def delete_form(form_id: str, db: Session = Depends(get_db), current_user: User 
     """
     Deletes a form and cascades to all responses, analysis, chat sessions, and generated files.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     
@@ -326,14 +446,14 @@ def delete_form(form_id: str, db: Session = Depends(get_db), current_user: User 
 
 @router.get("/{form_id}/questions", response_model=List[FormQuestionResponse])
 def get_form_questions(form_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     return form.questions
 
 @router.get("/{form_id}/analysis", response_model=AnalysisResultResponse)
 def get_form_analysis(form_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form or not form.analysis:
         raise HTTPException(status_code=404, detail="Analysis not found for this form.")
     return form.analysis
@@ -349,7 +469,7 @@ def get_form_responses(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
 
@@ -405,7 +525,7 @@ def get_form_data_status(form_id: str, db: Session = Depends(get_db), current_us
     """
     Returns actual counts and status across Google API, local DB, attachments, and sync status.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     
@@ -575,7 +695,7 @@ def sync_latest_responses(form_id: str, db: Session = Depends(get_db), current_u
     Synchronizes latest responses from Google Form API or linked Google Sheet.
     Prevents duplicates, processes new responses, and updates analytics.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
 
@@ -637,7 +757,7 @@ def attach_responses_sheet(
     Attaches a Google Sheet containing submitted responses to an existing Google Form.
     Fetches the responses, maps questions, updates database, and recalculates analytics.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
 
@@ -687,7 +807,7 @@ async def upload_form_responses(
     """
     Uploads a CSV or Excel responses export file into an existing form to populate responses and analytics.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
 
@@ -713,7 +833,7 @@ def get_form_attachments(form_id: str, db: Session = Depends(get_db), current_us
     """
     Lists attachments and their processing statuses.
     """
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = _get_form_for_user(form_id, current_user, db)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     

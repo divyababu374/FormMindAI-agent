@@ -29,7 +29,8 @@ def init_db_schema():
                 ("response_sync_status", "VARCHAR(50) DEFAULT 'synced'"),
                 ("analysis_status", "VARCHAR(50) DEFAULT 'ready'"),
                 ("attachment_status", "VARCHAR(50) DEFAULT 'none'"),
-                ("last_synced_at", "DATETIME")
+                ("last_synced_at", "DATETIME"),
+                ("connected_email", "VARCHAR(255)")
             ]
             for col_name, col_type in new_cols:
                 if col_name not in existing_cols:

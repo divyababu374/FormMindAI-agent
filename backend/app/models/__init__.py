@@ -1,4 +1,5 @@
 from app.models.user import User
+from app.models.account import ConnectedAccount, ConnectedDriveForm
 from app.models.form import Form
 from app.models.question import FormQuestion
 from app.models.response import FormResponse, ResponseAnswer
@@ -9,6 +10,8 @@ from app.models.attachment import Attachment
 
 __all__ = [
     "User",
+    "ConnectedAccount",
+    "ConnectedDriveForm",
     "Form",
     "FormQuestion",
     "FormResponse",
@@ -20,3 +23,4 @@ __all__ = [
     "GeneratedReport",
     "GeneratedFile",
 ]
+

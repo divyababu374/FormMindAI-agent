@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #FFF9F5;
+    color: #24110A;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom Modern Peach & White Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FFF9F5;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #FAD5C0;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F7BA9E;
+  }
+}
+
+/* Glassmorphism & UI Accents in Peach & White */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid #FAD5C0;
+  box-shadow: 0 10px 30px -5px rgba(249, 115, 66, 0.07);
+}
+
+.glass-card {
+  background: #FFFFFF;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid #FAD5C0;
+  box-shadow: 0 4px 20px -2px rgba(249, 115, 66, 0.05);
+}
+
+.glass-card:hover {
+  border-color: #F97342;
+  box-shadow: 0 10px 30px rgba(249, 115, 66, 0.12);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #F97342 0%, #EA580C 50%, #C2410C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-border {
+  position: relative;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgba(249, 115, 66, 0.4), rgba(255, 141, 96, 0.3));
+  padding: 1px;
+}
+
+/* Pulse animation for active AI calculations */
+@keyframes glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+/* =========================================================================
+   Peach & White Theme: Universal Card & Surface Overrides
+   Ensures ALL cards and containers are pure crisp white or radiant soft peach
+   with warm peach borders, completely eliminating dark background boxes.
+   ========================================================================= */
+
+/* Main Card Containers */
+[class*="bg-slate-900"],
+[class*="bg-slate-950"],
+[class*="bg-slate-850"] {
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+  border-color: #FAD5C0 !important;
+  box-shadow: 0 4px 20px -2px rgba(249, 115, 66, 0.06);
+}
+
+/* Secondary Inner Pills, Subtle List Rows, and Fact Blocks */
+[class*="bg-slate-950/40"],
+[class*="bg-slate-950/60"],
+[class*="bg-slate-900/40"],
+[class*="bg-slate-800"] {
+  background-color: #FFF8F4 !important;
+  border-color: #FDE4D7 !important;
+}
+
+/* Universal Borders */
+[class*="border-slate-800"],
+[class*="border-slate-700"] {
+  border-color: #FAD5C0 !important;
+}
+
+/* =========================================================================
+   Universal Typography & Contrast Rules for Peach & White Theme
+   Guarantees 100% crystal-clear legibility across all views
+   ========================================================================= */
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: #24110A !important;
+  font-weight: 800;
+}
+
+/* Text color contrast overrides */
+.text-slate-400, .text-slate-500 {
+  color: #6B3B2B !important;
+  font-weight: 500;
+}
+.text-slate-300 {
+  color: #4A281A !important;
+  font-weight: 500;
+}
+.text-slate-200, .text-slate-100 {
+  color: #24110A !important;
+  font-weight: 600;
+}
+
+/* In non-button containers, text-white defaults to rich espresso */
+p.text-white, span.text-white:not(button *):not(a *):not([class*="bg-brand-"] *):not([class*="bg-gradient-"] *),
+div.text-white:not(button *):not(a *):not([class*="bg-brand-"] *):not([class*="bg-gradient-"] *),
+h1.text-white, h2.text-white, h3.text-white, h4.text-white, h5.text-white, h6.text-white {
+  color: #24110A !important;
+}
+
+/* Buttons and Interactive Elements: Ensure bright crisp white text */
+button, a {
+  cursor: pointer;
+}
+button[class*="bg-brand-"],
+button[class*="bg-gradient-"],
+button.bg-brand-600,
+button.bg-brand-500,
+a[class*="bg-brand-"],
+a[class*="bg-gradient-"],
+[class*="bg-brand-600"],
+[class*="bg-brand-500"],
+[class*="bg-emerald-600"],
+[class*="bg-indigo-600"] {
+  color: #FFFFFF !important;
+}
+
+button[class*="bg-brand-"] *,
+button[class*="bg-gradient-"] *,
+a[class*="bg-brand-"] *,
+a[class*="bg-gradient-"] * {
+  color: #FFFFFF !important;
+}
+
+/* Active Tabs */
+button[class*="bg-brand-600"] span,
+button[class*="bg-brand-500"] span {
+  color: #FFFFFF !important;
+}
+
+/* Tables: Crisp White with Warm Peach Headers */
+table {
+  background-color: #FFFFFF !important;
+  color: #24110A !important;
+}
+th {
+  background-color: #FFF2EB !important;
+  color: #8C2C08 !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #FAD5C0 !important;
+}
+td {
+  color: #331A0F !important;
+  border-bottom: 1px solid #FDE4D7 !important;
+}
+tr:nth-child(even) {
+  background-color: #FFFAF7 !important;
+}
+tr:hover {
+  background-color: #FFF1E8 !important;
+}
+
+/* Form Controls & Inputs */
+input, select, textarea {
+  color: #24110A !important;
+  background-color: #FFFFFF !important;
+  border-color: #FAD5C0 !important;
+}
+input::placeholder, textarea::placeholder {
+  color: #8D5A46 !important;
+}

@@ -101,13 +101,229 @@ class DeterministicEngine:
         grounded_facts: Dict[str, Any],
         chat_history: List[Dict[str, str]]
     ) -> Dict[str, Any]:
+        """
+        Conversational assistant that handles:
+        1. Conversational Memory & Contextual Follow-ups
+        2. General Knowledge & Statistical / Survey Concepts (e.g. Standard Deviation, Completion Rate, NPS)
+        3. Dynamic Dataset-Grounded Semantic Search across respondents and answers
+        4. Context-aware helpful answers
+        """
+        msg_lower = user_message.lower().strip()
+        clean_msg = re.sub(r'[^\w\s]', ' ', msg_lower).strip()
+
+        title = form_context.get("title", "Active Form")
+        total_resp = form_context.get("total_responses", 0)
+        respondents = grounded_facts.get("respondents", [])
+        dataset_preview = grounded_facts.get("dataset_preview", [])
+        questions = grounded_facts.get("questions", [])
+
+        # -------------------------------------------------------------
+        # A. Conversational Memory & Chat History Queries
+        # -------------------------------------------------------------
+        if any(w in msg_lower for w in ["what did i ask", "my previous question", "my last question", "what was my question", "summarize our chat", "summarize our conversation", "what have we discussed"]):
+            if chat_history and len(chat_history) > 1:
+                user_qs = [m["content"] for m in chat_history[:-1] if m.get("role") == "user"]
+                if user_qs:
+                    q_bullets = "\n".join([f"{i+1}. *\"{q}\"*" for i, q in enumerate(user_qs)])
+                    ans = f"🧠 **Conversation Memory — Questions Asked So Far:**\n\n{q_bullets}\n\nI retain our full chat history for **\"{title}\"**. Feel free to ask more questions or follow up on any previous topic!"
+                    return {
+                        "role": "assistant",
+                        "content": ans,
+                        "chart_data": None,
+                        "grounded_facts": grounded_facts,
+                        "intent_detected": "chat_memory"
+                    }
+
+        # Follow-up "who are they?" / "list them"
+        if any(clean_msg.startswith(w) or clean_msg == w for w in ["who are they", "who are these", "what are their names", "tell me their names", "list them", "show them"]):
+            prev_reply = ""
+            if chat_history:
+                for m in reversed(chat_history[:-1]):
+                    if m.get("role") == "assistant":
+                        prev_reply = m.get("content", "")
+                        break
+            if prev_reply and dataset_preview:
+                matched_entries = []
+                for p in dataset_preview:
+                    r_name = str(p.get("Respondent", "")).lower()
+                    r_num = str(p.get("Response #", ""))
+                    if (r_name and r_name in prev_reply.lower()) or (f"#{r_num}" in prev_reply):
+                        matched_entries.append(p)
+                if matched_entries:
+                    lines = [f"Here are the details for the **{len(matched_entries)} respondents** from our previous discussion:\n"]
+                    for me in matched_entries:
+                        lines.append(f"### 📋 Response #{me.get('Response #')} — **{me.get('Respondent')}**")
+                        for qk, qv in me.get("Details", {}).items():
+                            lines.append(f"• **{qk}**: **{qv}**")
+                        lines.append("")
+                    return {
+                        "role": "assistant",
+                        "content": "\n".join(lines).strip(),
+                        "chart_data": None,
+                        "grounded_facts": grounded_facts,
+                        "intent_detected": "follow_up_respondents"
+                    }
+
+        # -------------------------------------------------------------
+        # B. General Statistical, Data Science & Survey Concepts
+        # -------------------------------------------------------------
+        if any(w in msg_lower for w in ["standard deviation", "std dev", "stddev", "what is standard deviation"]):
+            ans = (
+                "📐 **Standard Deviation Explained:**\n\n"
+                "**Standard Deviation (SD)** measures how spread out numerical responses or ratings are from the average (mean):\n"
+                "• **Low Standard Deviation (< 0.8)**: Respondents are in strong consensus (answers cluster tightly around the mean).\n"
+                "• **High Standard Deviation (> 1.2)**: Opinions are polarized or widely divergent across respondents.\n\n"
+                f"In your survey **\"{title}\"**, examining standard deviation helps you spot questions where opinions are unified versus questions where audience satisfaction varies significantly."
+            )
+            return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "educational_stats"}
+
+        if any(w in msg_lower for w in ["mean vs median", "difference between mean and median", "what is median"]):
+            ans = (
+                "📊 **Mean vs. Median:**\n\n"
+                "• **Mean (Average)**: Sum of all numerical values divided by the number of responses. It reflects overall performance but can be skewed by extreme outliers (very high or very low ratings).\n"
+                "• **Median (Middle Value)**: The midpoint value when all ratings are sorted in order. It is resistant to outliers and shows what a typical respondent experienced.\n\n"
+                f"For **\"{title}\"**, when the mean and median are nearly identical, the distribution of responses is symmetrical."
+            )
+            return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "educational_stats"}
+
+        if any(w in msg_lower for w in ["completion rate", "response rate", "what is completion rate", "improve response rate", "increase responses"]):
+            ans = (
+                f"📈 **Survey Completion & Response Rates:**\n\n"
+                f"• **Current Status**: **\"{title}\"** currently has **{total_resp} responses** with an estimated **{form_context.get('completion_rate', '100%')}** completion rate.\n\n"
+                "**Top 4 Best Practices to Increase Responses:**\n"
+                "1. **Keep it concise**: Surveys under 5 minutes have a 15–20% higher completion rate.\n"
+                "2. **Optimal Timing**: Send survey invitations on Tuesday or Thursday mornings for maximum engagement.\n"
+                "3. **Progress Indicators**: Ensure multi-page forms display clear progress bars.\n"
+                "4. **Actionable Incentive**: Clearly explain how participant feedback directly drives meaningful changes."
+            )
+            return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "survey_best_practices"}
+
+        if any(w in msg_lower for w in ["nps", "net promoter score"]):
+            ans = (
+                "🌟 **Net Promoter Score (NPS) Overview:**\n\n"
+                "NPS measures customer loyalty by asking: *\"How likely are you to recommend our product/service on a scale of 0–10?\"*\n"
+                "• **Promoters (Score 9–10)**: Loyal enthusiasts who fuel growth.\n"
+                "• **Passives (Score 7–8)**: Satisfied but unenthusiastic respondents.\n"
+                "• **Detractors (Score 0–6)**: Unhappy respondents who can impede growth.\n\n"
+                "**Formula**: `NPS = % Promoters − % Detractors` (yielding a score between −100 and +100)."
+            )
+            return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "educational_nps"}
+
+        # -------------------------------------------------------------
+        # C. Dynamic Form Semantic Search / Extrema / Field Aggregations
+        # -------------------------------------------------------------
+        # Check for average of specific question (e.g. "average age", "mean age")
+        avg_match = re.search(r'(?:average|mean|avg)\s+([a-zA-Z0-9_\- ]+)', msg_lower)
+        if avg_match:
+            target_word = avg_match.group(1).strip().lower()
+            matched_q = None
+            for q in questions:
+                if target_word in q.get("text", "").lower() or ("age" in target_word and "age" in q.get("text", "").lower()):
+                    matched_q = q
+                    break
+            if matched_q:
+                vals = []
+                for p in dataset_preview:
+                    d_val = p.get("Details", {}).get(matched_q["text"])
+                    try:
+                        num_m = re.search(r'[-+]?\d*\.?\d+', str(d_val))
+                        if num_m:
+                            vals.append(float(num_m.group(0)))
+                    except Exception:
+                        pass
+                if vals:
+                    calc_mean = round(sum(vals) / len(vals), 2)
+                    calc_median = round(float(np.median(vals)), 2)
+                    ans = (
+                        f"📊 **Calculated Statistics for *\"{matched_q['text']}\"*:**\n\n"
+                        f"• **Average (Mean):** **{calc_mean}**\n"
+                        f"• **Median:** **{calc_median}**\n"
+                        f"• **Sample Count:** **{len(vals)} respondents** (Range: {min(vals)} to {max(vals)})"
+                    )
+                    return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "dynamic_average"}
+
+        # Check for oldest / youngest
+        if "oldest" in msg_lower or "highest age" in msg_lower or "maximum age" in msg_lower:
+            age_q = next((q for q in questions if "age" in q.get("text", "").lower()), None)
+            if age_q:
+                sorted_by_age = []
+                for p in dataset_preview:
+                    val = p.get("Details", {}).get(age_q["text"])
+                    try:
+                        num_m = re.search(r'[-+]?\d*\.?\d+', str(val))
+                        if num_m:
+                            sorted_by_age.append((p.get("Respondent"), p.get("Response #"), float(num_m.group(0))))
+                    except Exception:
+                        pass
+                if sorted_by_age:
+                    sorted_by_age.sort(key=lambda x: x[2], reverse=True)
+                    top = sorted_by_age[0]
+                    ans = f"👑 The **oldest respondent** in this survey is **{top[0]}** (Response #{top[1]}) with an age of **{int(top[2]) if top[2].is_integer() else top[2]}**."
+                    return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "oldest_respondent"}
+
+        if "youngest" in msg_lower or "lowest age" in msg_lower or "minimum age" in msg_lower:
+            age_q = next((q for q in questions if "age" in q.get("text", "").lower()), None)
+            if age_q:
+                sorted_by_age = []
+                for p in dataset_preview:
+                    val = p.get("Details", {}).get(age_q["text"])
+                    try:
+                        num_m = re.search(r'[-+]?\d*\.?\d+', str(val))
+                        if num_m:
+                            sorted_by_age.append((p.get("Respondent"), p.get("Response #"), float(num_m.group(0))))
+                    except Exception:
+                        pass
+                if sorted_by_age:
+                    sorted_by_age.sort(key=lambda x: x[2])
+                    top = sorted_by_age[0]
+                    ans = f"🌱 The **youngest respondent** in this survey is **{top[0]}** (Response #{top[1]}) with an age of **{int(top[2]) if top[2].is_integer() else top[2]}**."
+                    return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "youngest_respondent"}
+
+        # Search for any value matching text across respondents (e.g. "who is from vit", "how many are in CS")
+        search_words = [w for w in clean_msg.split() if len(w) >= 2 and w not in ["who", "what", "is", "are", "how", "many", "the", "from", "in", "for", "with", "have", "there", "any", "anyone"]]
+        if search_words and dataset_preview:
+            matching_respondents = []
+            matched_key = None
+            matched_term = None
+            for word in search_words:
+                for p in dataset_preview:
+                    for qk, qv in p.get("Details", {}).items():
+                        if qv is not None and word in str(qv).lower().split():
+                            if p not in matching_respondents:
+                                matching_respondents.append(p)
+                                matched_key = qk
+                                matched_term = word
+            if matching_respondents:
+                count = len(matching_respondents)
+                names = [f"• **{me.get('Respondent')}** (Response #{me.get('Response #')} — {matched_key}: *{me.get('Details', {}).get(matched_key)}*)" for me in matching_respondents]
+                ans = (
+                    f"🔍 Found **{count} respondent{'s' if count != 1 else ''}** matching **\"{matched_term.upper()}\"** in *\"{matched_key}\"*:\n\n"
+                    + "\n".join(names)
+                )
+                return {"role": "assistant", "content": ans, "chart_data": None, "grounded_facts": grounded_facts, "intent_detected": "semantic_filter"}
+
+        # -------------------------------------------------------------
+        # D. General Conversational Fallback with Form Grounding
+        # -------------------------------------------------------------
+        q_summary = ", ".join([f"\"{q.get('text', '')}\"" for q in questions[:4]])
+        fallback_ans = (
+            f"I am analyzing the verified dataset for **\"{title}\"** ({total_resp} responses, {len(questions)} questions).\n\n"
+            f"Here are specific ways you can query this form:\n"
+            f"• **Numerical Conditions**: *\"How many are >= 20 in age?\"* or *\"Who is younger than 20?\"*\n"
+            f"• **Respondent Lookup**: *\"Show Divya's response\"* or *\"What did Suresh answer for question 3?\"*\n"
+            f"• **Demographics & Categories**: *\"Who is from Vit?\"* or *\"How many are in CS department?\"*\n"
+            f"• **General Knowledge & Concepts**: *\"What is standard deviation?\"* or *\"How can I improve survey completion?\"*\n"
+            f"• **Chat Memory**: *\"What was my last question?\"* or *\"Who are they?\"*"
+        )
+
         return {
             "role": "assistant",
-            "content": grounded_facts.get("computed_answer", "Based on the verified dataset, I could not compute an exact metric for your query."),
+            "content": grounded_facts.get("computed_answer") or fallback_ans,
             "chart_data": grounded_facts.get("chart_data"),
             "grounded_facts": grounded_facts,
             "intent_detected": grounded_facts.get("intent", "general_query")
         }
+
 
     def generate_report_markdown(
         self,

@@ -81,10 +81,21 @@ Open-Ended Text Analysis: {json.dumps(text_analysis)}
 
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+            
+            history_lines = []
+            if chat_history:
+                for msg in chat_history[:-1]:
+                    r = "User" if msg.get("role") == "user" else "Assistant"
+                    history_lines.append(f"{r}: {msg.get('content', '')}")
+            history_text = "\n".join(history_lines) if history_lines else "No previous messages in this session."
+
             prompt = f"""
-You are FormMind AI, a world-class conversational AI survey chatbot.
+You are FormMind AI, a world-class conversational AI survey analyst and assistant.
 You are helping the user analyze verified responses for the form: "{form_context.get('title')}".
 Total Responses: {form_context.get('total_responses')} | Completion Rate: {form_context.get('completion_rate')}
+
+CONVERSATION MEMORY & PREVIOUS TURNS:
+{history_text}
 
 VERIFIED FORM RESPONDENTS & QUESTION DATA:
 {json.dumps(grounded_facts.get('dataset_preview', grounded_facts), indent=2)}
@@ -92,14 +103,15 @@ VERIFIED FORM RESPONDENTS & QUESTION DATA:
 DETERMINISTIC VERIFIED FACTS:
 {json.dumps({k: v for k, v in grounded_facts.items() if k != 'dataset_preview'}, indent=2)}
 
-USER QUESTION: {user_message}
+CURRENT USER MESSAGE:
+{user_message}
 
 CRITICAL INSTRUCTIONS:
-1. Act like a polite, knowledgeable, and proactive AI chatbot.
-2. If the user asks about a specific person, name, department, college, or question, extract the exact answer from the data above.
-3. If 'direct_answer' is provided in the verified facts, incorporate it as the ground-truth answer.
-4. Format your response cleanly with markdown (bolding, bullet points, numbered lists).
-5. NEVER invent or hallucinate facts or respondents not in the data.
+1. You have FULL conversational memory of the previous turns in CONVERSATION MEMORY above. When the user asks follow-up questions (e.g. "who are they?", "what about them?", "what was my first question?"), seamlessly use the conversation history to answer accurately.
+2. You can answer BOTH specific questions about the form dataset AND general questions (e.g. "what is standard deviation?", "how to improve surveys?", data concepts, definitions, advice).
+3. If the user asks about specific form data, respondent names, questions, or statistics, ground your answer 100% in the verified data provided above.
+4. If 'direct_answer' is provided in the verified facts, incorporate it as the ground-truth answer.
+5. Format your response cleanly with markdown (bolding, bullet points, numbered lists).
 """
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],

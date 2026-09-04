@@ -202,6 +202,58 @@ class GroundedChatEngine:
             }
 
         # -------------------------------------------------------------
+        # 0.5 Conversational Memory & Contextual Follow-up Resolution
+        # -------------------------------------------------------------
+        # 1) Questions asking to recall past user questions or summarize chat:
+        if any(w in user_lower for w in ["what did i ask earlier", "what was my last question", "what was my previous question", "what was my first question", "what did we discuss", "summarize our chat", "summarize our conversation", "what did we talk about", "what did i ask"]):
+            if chat_history:
+                past_user_qs = [
+                    m["content"] for m in chat_history 
+                    if m.get("role") == "user" and m.get("content", "").strip().lower() != user_lower
+                ]
+                if past_user_qs:
+                    q_list = "\n".join([f"{i+1}. *\"{q}\"*" for i, q in enumerate(past_user_qs)])
+                    direct_ans = f"🧠 **Here is what you've asked so far in our chat:**\n\n{q_list}\n\nI remember all our previous discussion! You can ask follow-ups on any of these topics."
+                else:
+                    direct_ans = "We just started our chat session for this form! Feel free to ask any question about respondents, ratings, or demographics."
+            else:
+                direct_ans = "This is the start of our chat session for this form. What would you like to know?"
+            return {
+                "content": direct_ans,
+                "chart_data": None,
+                "grounded_facts": {"intent": "chat_memory_recall", "direct_answer": direct_ans},
+                "intent_detected": "chat_memory_recall"
+            }
+
+        # 2) Follow-up asking "who are they?" / "tell me their names" / "what are their names" / "list them":
+        if any(user_clean.startswith(w) or user_clean == w for w in ["who are they", "who are these", "what are their names", "tell me their names", "list them", "show them", "who are those", "give their names"]):
+            prev_assist = None
+            if chat_history:
+                for m in reversed(chat_history):
+                    if m.get("role") == "assistant":
+                        prev_assist = m.get("content", "")
+                        break
+            if prev_assist:
+                matched_names = []
+                for rec in records:
+                    if rec["name_lower"] in prev_assist.lower() or f"#{rec['response_number']}" in prev_assist:
+                        matched_names.append(rec)
+                if matched_names:
+                    lines = [f"Here are the details for the **{len(matched_names)} respondents** we just discussed:\n"]
+                    for m in matched_names:
+                        lines.append(f"### 📋 Response #{m['response_number']} — **{m['name']}**")
+                        for q_text, ans_val in m['question_answers'].items():
+                            lines.append(f"• **{q_text}**: **{GroundedChatEngine._format_ans(ans_val)}**")
+                        lines.append("")
+                    direct_ans = "\n".join(lines).strip()
+                    return {
+                        "content": direct_ans,
+                        "chart_data": None,
+                        "grounded_facts": {"intent": "follow_up_details", "direct_answer": direct_ans},
+                        "intent_detected": "follow_up_details"
+                    }
+
+        # -------------------------------------------------------------
         # 1. Question Count & Question List Queries
         # -------------------------------------------------------------
         if any(w in user_lower for w in ["how many questions", "number of questions", "total questions", "question count"]):
@@ -245,80 +297,201 @@ class GroundedChatEngine:
             }
 
         # -------------------------------------------------------------
-        # 3. Numeric & Rating Threshold Queries (e.g. "rated below 3", "rated above 4", "score less than 3")
         # -------------------------------------------------------------
-        threshold_patterns = [
-            (r'(?:rated|score|satisfaction|rating)\s*(?:below|under|less than|<)\s*(\d+(?:\.\d+)?)', "below"),
-            (r'(?:rated|score|satisfaction|rating)\s*(?:above|over|greater than|more than|>|at least|>=)\s*(\d+(?:\.\d+)?)', "above"),
-            (r'(?:below|under|less than|<)\s*(\d+(?:\.\d+)?)', "below"),
-            (r'(?:above|over|greater than|more than|>)\s*(\d+(?:\.\d+)?)', "above")
+        # 3. Numeric & Rating Threshold Queries (e.g. ">=20 in age", "rated below 3", "older than 20", "age >= 20")
+        # -------------------------------------------------------------
+        numeric_patterns = [
+            # Prefix operators: >= 20, <= 20, > 20, < 20, == 20, != 20
+            (r'(>=|=>)\s*(\d+(?:\.\d+)?)', ">="),
+            (r'(<=|=<)\s*(\d+(?:\.\d+)?)', "<="),
+            (r'(?:greater than or equal to|at least|minimum of|min\.?)\s*(\d+(?:\.\d+)?)', ">="),
+            (r'(?:less than or equal to|at most|maximum of|max\.?|up to)\s*(\d+(?:\.\d+)?)', "<="),
+            (r'(?:older than|greater than|more than|above|over|higher than|exceeding|>)\s*(\d+(?:\.\d+)?)', ">"),
+            (r'(?:younger than|less than|below|under|lower than|fewer than|<)\s*(\d+(?:\.\d+)?)', "<"),
+            (r'(?:==|=|equal to|equals|exactly|aged)\s*(\d+(?:\.\d+)?)', "=="),
+            # Suffix operators: 20 or older, 20 and above, 20+, 20 or younger
+            (r'(\d+(?:\.\d+)?)\s*(?:or older|or above|or more|and above|and up|\+)', "suffix_above"),
+            (r'(\d+(?:\.\d+)?)\s*(?:or younger|or below|or less|and below|and under)', "suffix_below")
         ]
-        
-        is_threshold_query = False
+
         thresh_op = None
         thresh_val = None
-        if any(w in user_lower for w in ["rated", "rating", "score", "below", "above", "under", "greater than", "less than"]):
-            for pat, op in threshold_patterns:
-                m = re.search(pat, user_lower)
-                if m:
+        for pat, op_type in numeric_patterns:
+            m = re.search(pat, user_lower)
+            if m:
+                if op_type == "suffix_above":
+                    thresh_op = ">="
                     thresh_val = float(m.group(1))
-                    thresh_op = op
-                    is_threshold_query = True
+                elif op_type == "suffix_below":
+                    thresh_op = "<="
+                    thresh_val = float(m.group(1))
+                else:
+                    thresh_op = op_type
+                    thresh_val = float(m.group(2) if len(m.groups()) >= 2 else m.group(1))
+                break
+
+        if thresh_op is not None and thresh_val is not None:
+            # Resolve target question for the numeric condition
+            target_q = None
+            
+            # 1. Match keyword in user_lower against question texts (e.g. "age", "rating", "satisfaction", "score")
+            stop_words = {"how", "many", "are", "people", "students", "respondents", "the", "in", "who", "is", "have", "with", "what", "about", "for"}
+            for q in questions:
+                q_text = q["question_text"].lower()
+                if ("age" in user_lower or "old" in user_lower or "years" in user_lower) and "age" in q_text:
+                    target_q = q
+                    break
+                if any(w in user_lower for w in ["rating", "score", "satisfied", "satisfaction"]) and any(w in q_text for w in ["rating", "score", "satisfied", "satisfaction"]):
+                    target_q = q
+                    break
+                q_words = [w for w in re.sub(r'[^\w\s]', '', q_text).split() if len(w) > 2 and w not in stop_words]
+                if any(re.search(rf"\b{re.escape(w)}\b", user_lower) for w in q_words):
+                    target_q = q
                     break
 
-        if is_threshold_query and thresh_val is not None:
-            num_qs = [q for q in questions if q.get("inferred_data_type") == "numeric" or any(k in q["question_text"].lower() for k in ["rating", "score", "satisfied", "satisfaction"])]
-            if not num_qs:
-                num_qs = [q for q in questions if q.get("question_type") == "rating"]
+            # 2. Check if user explicitly wrote "q1", "question 2", etc.
+            if not target_q:
+                target_q = GroundedChatEngine._match_question_from_query(user_lower, questions)
 
-            if num_qs:
-                target_q = num_qs[0]
+            # 3. Check recent chat_history to inherit the question context from previous conversation
+            if not target_q and chat_history:
+                for msg in reversed(chat_history[-6:]):
+                    content_lower = msg.get("content", "").lower()
+                    for q in questions:
+                        q_text = q["question_text"].lower()
+                        if "age" in q_text and ("age" in content_lower or "old" in content_lower):
+                            target_q = q
+                            break
+                        if any(w in q_text for w in ["rating", "score", "satisfied"]) and any(w in content_lower for w in ["rating", "score", "satisfied"]):
+                            target_q = q
+                            break
+                    if target_q:
+                        break
+
+            # 4. Infer target question from record values matching the magnitude of thresh_val
+            if not target_q:
+                best_q = None
+                best_diff = float("inf")
+                for q in questions:
+                    qk = q["question_key"]
+                    q_vals = []
+                    for r in records:
+                        raw = r["cleaned"].get(qk)
+                        try:
+                            if raw is not None:
+                                q_vals.append(float(raw))
+                        except (ValueError, TypeError):
+                            pass
+                    if q_vals:
+                        min_v, max_v = min(q_vals), max(q_vals)
+                        if min_v <= thresh_val <= max_v:
+                            target_q = q
+                            break
+                        diff = min(abs(thresh_val - min_v), abs(thresh_val - max_v))
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_q = q
+                if not target_q and best_q:
+                    target_q = best_q
+
+            if not target_q and questions:
+                # Default to first numeric or rating question if available
+                num_qs = [q for q in questions if q.get("inferred_data_type") == "numeric" or q.get("question_type") == "rating"]
+                target_q = num_qs[0] if num_qs else questions[0]
+
+            if target_q:
                 tk = target_q["question_key"]
                 t_text = target_q["question_text"]
 
                 matched_recs = []
+                non_matched_recs = []
                 for rec in records:
                     raw_v = rec["cleaned"].get(tk)
                     if raw_v is not None:
                         try:
-                            f_v = float(raw_v)
-                            if thresh_op == "below" and f_v < thresh_val:
-                                matched_recs.append((rec, f_v))
-                            elif thresh_op == "above":
-                                if thresh_val >= 4.0:
-                                    if f_v >= thresh_val:
-                                        matched_recs.append((rec, f_v))
+                            # Parse numeric value safely (extract float even if formatted like "20 years" or "5.0")
+                            num_match = re.search(r'[-+]?\d*\.?\d+', str(raw_v))
+                            if num_match:
+                                f_v = float(num_match.group(0))
+                                is_rating_context = any(w in t_text.lower() for w in ["rating", "score", "satisfied", "satisfaction"]) or "rated" in user_lower
+                                is_word_above = any(w in user_lower for w in ["above", "over"]) and ">" not in user_lower
+
+                                matches = False
+                                if thresh_op == ">=":
+                                    matches = f_v >= thresh_val - 1e-6
+                                elif thresh_op == "<=":
+                                    matches = f_v <= thresh_val + 1e-6
+                                elif thresh_op == ">":
+                                    # Top-box rating convention: "rated above 4" on a 5-point scale includes 4 and 5
+                                    if is_word_above and is_rating_context and thresh_val >= 4.0:
+                                        matches = f_v >= thresh_val - 1e-6
+                                    else:
+                                        matches = f_v > thresh_val + 1e-6
+                                elif thresh_op == "<":
+                                    matches = f_v < thresh_val - 1e-6
+                                elif thresh_op == "==":
+                                    matches = abs(f_v - thresh_val) < 1e-4
+
+                                if matches:
+                                    matched_recs.append((rec, f_v))
                                 else:
-                                    if f_v > thresh_val:
-                                        matched_recs.append((rec, f_v))
+                                    non_matched_recs.append((rec, f_v))
                         except (ValueError, TypeError):
                             pass
 
                 count = len(matched_recs)
                 pct = round((count / max(1, total_responses)) * 100, 1)
 
-                op_phrase = f"below {int(thresh_val) if thresh_val.is_integer() else thresh_val}" if thresh_op == "below" else f"above {int(thresh_val) if thresh_val.is_integer() else thresh_val}"
-                names = [f"**{mr[0]['name']}** (Response #{mr[0]['response_number']} — score: {int(mr[1]) if mr[1].is_integer() else mr[1]})" for mr in matched_recs[:10]]
-                more_suffix = f" and {count - 10} more" if count > 10 else ""
+                val_disp = int(thresh_val) if thresh_val.is_integer() else thresh_val
+                op_names = {
+                    ">=": f"≥ {val_disp} ({val_disp} or older/above)",
+                    "<=": f"≤ {val_disp} ({val_disp} or younger/below)",
+                    ">": f"> {val_disp} (greater than {val_disp})",
+                    "<": f"< {val_disp} (less than {val_disp})",
+                    "==": f"= {val_disp} (exactly {val_disp})"
+                }
+                op_desc = op_names.get(thresh_op, f"{thresh_op} {val_disp}")
 
-                direct_ans = (
-                    f"There are **{count} respondents ({count} people)** ({pct}% of total) who rated **{op_phrase}** for *\"{t_text}\"*:\n\n"
-                    + ("\n• ".join([""] + names) + more_suffix if names else "*(No respondents met this threshold)*")
-                )
+                field_label = "age" if "age" in t_text.lower() else ("rating" if "rating" in t_text.lower() or "score" in t_text.lower() or "satisfied" in t_text.lower() else t_text)
+
+                names = [
+                    f"• **{mr[0]['name']}** (Response #{mr[0]['response_number']} — {field_label}: **{int(mr[1]) if mr[1].is_integer() else mr[1]}**)"
+                    for mr in matched_recs
+                ]
+
+                lines = [
+                    f"📊 **Result:** There {'is' if count == 1 else 'are'} **{count} respondent{'s' if count != 1 else ''}** ({pct}% of verified total) with **{field_label} {op_desc}** in *\"{t_text}\"*.\n"
+                ]
+
+                if names:
+                    lines.append("### 👥 Matching Respondents:")
+                    lines.extend(names)
+                else:
+                    lines.append("*(No respondents met this criteria).*")
+
+                if non_matched_recs:
+                    non_count = len(non_matched_recs)
+                    non_names = [f"{nm[0]['name']} ({int(nm[1]) if nm[1].is_integer() else nm[1]})" for nm in non_matched_recs[:4]]
+                    lines.append(f"\n💡 *The remaining {non_count} respondent{'s' if non_count != 1 else ''} did not meet this criteria (e.g. {', '.join(non_names)}).*")
+
+                direct_ans = "\n".join(lines).strip()
 
                 return {
                     "content": direct_ans,
                     "chart_data": None,
                     "grounded_facts": {
                         "intent": "filtered_metric_query",
+                        "target_question": t_text,
                         "threshold_operator": thresh_op,
                         "threshold_value": thresh_val,
                         "count": count,
                         "percentage": pct,
+                        "matching_names": [mr[0]["name"] for mr in matched_recs],
                         "direct_answer": direct_ans
                     },
                     "intent_detected": "filtered_metric_query"
                 }
+
 
         # -------------------------------------------------------------
         # 4. Specific Respondent Search / Name Query

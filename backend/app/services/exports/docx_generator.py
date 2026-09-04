@@ -1,12 +1,29 @@
 import os
+import sys
 import datetime
+from pathlib import Path
 from typing import Dict, Any, List
+
+# Ensure backend root is in sys.path so 'app' can be imported when running directly or in different working directories
+_backend_dir = str(Path(__file__).resolve().parents[3])
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
 # pyrefly: ignore [missing-import]
-from docx import Document
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT
-from app.config import settings
+from docx import Document  # type: ignore
+# pyrefly: ignore [missing-import]
+from docx.shared import Inches, Pt, RGBColor  # type: ignore
+# pyrefly: ignore [missing-import]
+from docx.enum.text import WD_ALIGN_PARAGRAPH  # type: ignore
+# pyrefly: ignore [missing-import]
+from docx.enum.table import WD_TABLE_ALIGNMENT  # type: ignore
+
+try:
+    from app.config import settings
+except ImportError:
+    class _FallbackSettings:
+        EXPORTS_DIR = os.path.join(_backend_dir, "exports")
+    settings = _FallbackSettings()  # type: ignore
 
 def generate_docx_report(
     form_id: str,
@@ -20,6 +37,7 @@ def generate_docx_report(
     """
     Generates a professionally styled Microsoft Word (.docx) document report.
     """
+    os.makedirs(settings.EXPORTS_DIR, exist_ok=True)
     filename = f"FormMind_Report_{form_id[:8]}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
     file_path = os.path.join(settings.EXPORTS_DIR, filename)
 
@@ -27,6 +45,7 @@ def generate_docx_report(
 
     # Document Title
     title_p = doc.add_paragraph()
+    title_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     title_run = title_p.add_run(f"FormMind AI — Analysis Report\n{form_title}")
     title_run.font.size = Pt(22)
     title_run.font.bold = True
@@ -161,3 +180,100 @@ def generate_docx_report(
 
     doc.save(file_path)
     return file_path
+
+
+if __name__ == "__main__":
+    print("Testing DOCX Report Generator...")
+    sample_stats = {
+        "basic": {
+            "total_responses": 42,
+            "completion_rate": "98%",
+            "total_questions": 5
+        },
+        "overview_cards": {
+            "average_rating": 4.6
+        },
+        "numerical": {
+            "q1": {
+                "question_text": "Overall Satisfaction",
+                "count": 42,
+                "mean": 4.6,
+                "median": 5.0,
+                "std_dev": 0.5,
+                "min": 3,
+                "max": 5,
+                "distribution": [
+                    {"label": "5 Stars", "count": 28, "percentage": 66.7},
+                    {"label": "4 Stars", "count": 12, "percentage": 28.6},
+                    {"label": "3 Stars", "count": 2, "percentage": 4.8}
+                ]
+            }
+        },
+        "categorical": {
+            "q2": {
+                "question_text": "Department",
+                "count": 42,
+                "unique_count": 3,
+                "distribution": [
+                    {"label": "Engineering", "count": 20, "percentage": 47.6},
+                    {"label": "Product", "count": 14, "percentage": 33.3},
+                    {"label": "Design", "count": 8, "percentage": 19.0}
+                ]
+            }
+        }
+    }
+    sample_text_analysis = {
+        "q3": {
+            "question_text": "Any suggestions for improvement?",
+            "sentiment": {
+                "positive_percentage": 85,
+                "negative_percentage": 15,
+                "score": 0.72
+            },
+            "positive_feedback": [
+                "Great user interface and speed!",
+                "The AI insights saved our team hours of manual analysis."
+            ],
+            "negative_feedback": [
+                "Would love to see more export formats."
+            ]
+        }
+    }
+    sample_comparisons = [
+        {
+            "title": "Satisfaction by Department",
+            "key_insight": "Engineering reported slightly higher satisfaction than other teams.",
+            "segments": [
+                {"group": "Engineering", "count": 20, "mean": 4.8, "median": 5.0},
+                {"group": "Product", "count": 14, "mean": 4.5, "median": 4.5},
+                {"group": "Design", "count": 8, "mean": 4.3, "median": 4.0}
+            ]
+        }
+    ]
+    sample_ai = {
+        "executive_summary": "The survey indicates overwhelmingly positive sentiment across all departments, with strong praise for interface responsiveness.",
+        "facts": [
+            "Total of 42 responses collected with 98% completion rate.",
+            "Overall satisfaction average stands at 4.6 out of 5."
+        ],
+        "interpretations": [
+            "Team members value analytical automation highly."
+        ],
+        "recommendations": [
+            "Expand export capabilities to include PowerPoint presentations."
+        ]
+    }
+
+    output_path = generate_docx_report(
+        form_id="demo_sample_123",
+        form_title="Quarterly Product Feedback",
+        form_description="Comprehensive employee & customer feedback analysis",
+        stats=sample_stats,
+        text_analysis=sample_text_analysis,
+        comparisons=sample_comparisons,
+        ai_insights=sample_ai
+    )
+    try:
+        print(f"SUCCESS: DOCX report successfully generated at:\n{output_path}")
+    except UnicodeEncodeError:
+        print(f"SUCCESS: DOCX report successfully generated at:\n{output_path.encode('ascii', errors='replace').decode('ascii')}")

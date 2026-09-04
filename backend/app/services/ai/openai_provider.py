@@ -90,13 +90,17 @@ Text Analysis: {json.dumps(text_analysis)}
                 headers["Authorization"] = f"Bearer {self.api_key}"
 
             system_prompt = (
-                f"You are FormMind AI for the survey '{form_context.get('title')}'. "
-                "Use the following calculated ground-truth facts to answer accurately and concisely:\n"
-                f"{json.dumps(grounded_facts, indent=2)}"
+                f"You are FormMind AI, an intelligent conversational AI survey analyst and assistant for '{form_context.get('title')}'.\n"
+                f"Total Verified Responses: {form_context.get('total_responses')} | Completion Rate: {form_context.get('completion_rate')}\n\n"
+                "You have full conversational memory of past conversation turns. Answer both specific questions grounded in the verified dataset "
+                "and general questions (such as survey methodology, data analysis advice, statistics concepts, and helpful follow-ups).\n\n"
+                f"VERIFIED GROUND-TRUTH FORM FACTS:\n{json.dumps(grounded_facts, indent=2)}"
             )
 
             messages = [{"role": "system", "content": system_prompt}]
-            for msg in chat_history[-6:]:
+            # Add past turns excluding the last if it's already the current user message
+            prev_turns = chat_history[:-1] if (chat_history and chat_history[-1].get("content") == user_message) else chat_history
+            for msg in prev_turns[-8:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
             messages.append({"role": "user", "content": user_message})
 

@@ -98,7 +98,8 @@ def send_chat_message(
         content=ai_result.get("content", "Analysis calculated."),
         chart_data=ai_result.get("chart_data"),
         grounded_facts=ai_result.get("grounded_facts"),
-        intent_detected=ai_result.get("intent_detected")
+        intent_detected=ai_result.get("intent_detected"),
+        file_attachment=ai_result.get("file_attachment")
     )
     db.add(assistant_msg)
     db.commit()

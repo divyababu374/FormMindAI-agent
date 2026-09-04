@@ -2,6 +2,7 @@ import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import FileResponse
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
@@ -19,7 +20,10 @@ from app.services.exports.infographic_generator import generate_infographic_imag
 router = APIRouter(prefix="/forms/{form_id}", tags=["Reports & File Exports"])
 
 def _get_form_and_data(form_id: str, current_user: User, db: Session):
-    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    form = db.query(Form).filter(
+        Form.id == form_id,
+        or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default")
+    ).first()
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     

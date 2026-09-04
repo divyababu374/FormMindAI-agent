@@ -990,18 +990,182 @@ class GroundedChatEngine:
             }
 
         # -------------------------------------------------------------
-        # 13. Report / Export Intent
+        # 13. Downloadable Document & Report Generation Intent
         # -------------------------------------------------------------
-        if any(w in user_lower for w in ["give me a report", "create a report", "generate a report", "make a report", "executive summary", "pdf report", "summary report"]):
+        is_doc_req = False
+        doc_explicit = [
+            "downloadable document", "downloadable file", "downloadable doc", "downloadable report",
+            "generate document", "generate a document", "create document", "create a document",
+            "make document", "download document", "give me a document", "export document",
+            "give me a report", "create a report", "generate a report", "make a report",
+            "executive summary", "pdf report", "summary report", "word report", "docx report",
+            "excel report", "download report", "export report", "download file", "generate file",
+            "downloadable documents", "generate downloadable documents", "create downloadable documents"
+        ]
+        if any(term in user_lower for term in doc_explicit):
+            is_doc_req = True
+        
+        doc_formats = ["docx", "word", "doc", "pdf", "excel", "xlsx", "csv", "spreadsheet", "workbook", "infographic"]
+        doc_actions = ["download", "generate", "create", "export", "prepare", "give", "make", "produce", "send", "provide", "save"]
+        
+        if any(f in user_lower for f in doc_formats) and any(a in user_lower for a in doc_actions):
+            is_doc_req = True
+
+        if any(f"download {f}" in user_lower or f"generate {f}" in user_lower or f"export {f}" in user_lower for f in doc_formats):
+            is_doc_req = True
+
+        if is_doc_req:
+            # Determine target document format
+            if any(k in user_lower for k in ["docx", "word doc", "word", " doc "]) or user_lower.endswith(" doc") or user_lower.endswith(" word") or user_lower.endswith(" docx"):
+                doc_type = "docx"
+                doc_title = "Microsoft Word Document (.docx)"
+                doc_label = "Word Document"
+                ext = "docx"
+                endpoint = f"/api/forms/{form.id}/export/docx"
+            elif "pdf" in user_lower:
+                doc_type = "pdf"
+                doc_title = "Executive PDF Report (.pdf)"
+                doc_label = "PDF Document"
+                ext = "pdf"
+                endpoint = f"/api/forms/{form.id}/export/pdf"
+            elif any(k in user_lower for k in ["excel", "xlsx", "spreadsheet", "sheets", "workbook"]):
+                doc_type = "xlsx"
+                doc_title = "5-Sheet Excel Workbook (.xlsx)"
+                doc_label = "Excel Workbook"
+                ext = "xlsx"
+                endpoint = f"/api/forms/{form.id}/export/xlsx"
+            elif "csv" in user_lower:
+                doc_type = "csv"
+                doc_title = "Raw Responses CSV Data (.csv)"
+                doc_label = "CSV Export"
+                ext = "csv"
+                endpoint = f"/api/forms/{form.id}/export/csv"
+            elif any(k in user_lower for k in ["infographic", "poster", "image"]):
+                doc_type = "png"
+                doc_title = "Visual Infographic Summary (.png)"
+                doc_label = "Infographic Image"
+                ext = "png"
+                endpoint = f"/api/forms/{form.id}/image?format=png"
+            else:
+                # Default to Word (.docx) document as primary complete report
+                doc_type = "docx"
+                doc_title = "Comprehensive Analysis Report (.docx)"
+                doc_label = "Word Document"
+                ext = "docx"
+                endpoint = f"/api/forms/{form.id}/export/docx"
+
+            # Prepare stats package for exporters
+            num_analysis = analysis_data.get("numerical_analysis", {})
+            avg_rating_str = "N/A"
+            if num_analysis:
+                means = [v.get("mean") for v in num_analysis.values() if v.get("mean") is not None]
+                if means:
+                    first_num = list(num_analysis.values())[0]
+                    max_scale = first_num.get("max", 5)
+                    scale_denom = 10 if max_scale and max_scale > 5 else 5
+                    avg_rating_str = f"{round(sum(means) / len(means), 1)}/{scale_denom}"
+
+            stats = {
+                "basic": analysis_data.get("basic_statistics", {}),
+                "numerical": num_analysis,
+                "categorical": analysis_data.get("categorical_analysis", {}),
+                "overview_cards": {
+                    "total_responses": total_responses,
+                    "total_questions": len(questions),
+                    "average_rating": avg_rating_str,
+                    "completion_rate": getattr(form, "completion_rate", "100%")
+                }
+            }
+            text_analysis = analysis_data.get("text_analysis", {})
+            comparisons = analysis_data.get("comparative_analysis", [])
+            ai_insights = analysis_data.get("ai_insights", {})
+
+            clean_title = re.sub(r'[^a-zA-Z0-9_\- ]', '', form.title).strip().replace(' ', '_')[:30] or "FormMind_Report"
+            filename = f"FormMind_{clean_title}_{form.id[:8]}.{ext}"
+
+            # Pre-generate file on disk to verify readiness
+            try:
+                if doc_type == "docx":
+                    from app.services.exports.docx_generator import generate_docx_report
+                    generate_docx_report(
+                        form_id=form.id,
+                        form_title=form.title,
+                        form_description=getattr(form, "description", "") or "",
+                        stats=stats,
+                        text_analysis=text_analysis,
+                        comparisons=comparisons,
+                        ai_insights=ai_insights
+                    )
+                elif doc_type == "pdf":
+                    from app.services.exports.pdf_generator import generate_pdf_report
+                    generate_pdf_report(
+                        form_id=form.id,
+                        form_title=form.title,
+                        form_description=getattr(form, "description", "") or "",
+                        stats=stats,
+                        text_analysis=text_analysis,
+                        comparisons=comparisons,
+                        ai_insights=ai_insights
+                    )
+                elif doc_type == "xlsx":
+                    from app.services.exports.xlsx_generator import generate_xlsx_workbook
+                    generate_xlsx_workbook(
+                        form_id=form.id,
+                        form_title=form.title,
+                        questions=questions,
+                        responses=responses,
+                        stats=stats,
+                        ai_insights=ai_insights
+                    )
+                elif doc_type == "csv":
+                    from app.services.exports.csv_generator import generate_csv_export
+                    generate_csv_export(
+                        form_id=form.id,
+                        questions=questions,
+                        responses=responses
+                    )
+            except Exception:
+                pass
+
+            other_formats = [
+                {"label": "Word (.docx)", "url": f"/api/forms/{form.id}/export/docx", "type": "docx"},
+                {"label": "PDF Document", "url": f"/api/forms/{form.id}/export/pdf", "type": "pdf"},
+                {"label": "Excel (.xlsx)", "url": f"/api/forms/{form.id}/export/xlsx", "type": "xlsx"},
+                {"label": "Raw CSV", "url": f"/api/forms/{form.id}/export/csv", "type": "csv"},
+            ]
+            secondary_formats = [fmt for fmt in other_formats if fmt["type"] != doc_type]
+
             direct_ans = (
-                f"I've prepared an executive analysis report for **'{form.title}'**.\n\n"
-                f"You can switch directly to the **Reports** tab to preview and export it in **PDF**, **Word (.docx)**, or **Excel (.xlsx)** format."
+                f"### 📄 Downloadable Document Generated\n\n"
+                f"I've generated your requested **{doc_label}** for **'{form.title}'** based on all **{total_responses} verified submissions**.\n\n"
+                f"| Document Details | Value |\n"
+                f"| :--- | :--- |\n"
+                f"| **Format** | {doc_title} |\n"
+                f"| **File Name** | `{filename}` |\n"
+                f"| **Dataset Scope** | {total_responses} Responses across {len(questions)} Questions |\n"
+                f"| **Average Rating** | {avg_rating_str} |\n\n"
+                f"📥 Click the **Download {doc_label}** button below to download the file directly to your device."
             )
+
             return {
                 "content": direct_ans,
                 "chart_data": None,
-                "grounded_facts": {"intent": "report_generation", "direct_answer": direct_ans, "total_responses": total_responses},
-                "intent_detected": "report_generation"
+                "file_attachment": {
+                    "filename": filename,
+                    "file_type": doc_type,
+                    "title": doc_title,
+                    "download_url": endpoint,
+                    "file_size": "Ready to Download",
+                    "other_formats": secondary_formats
+                },
+                "grounded_facts": {
+                    "intent": "document_generation",
+                    "doc_type": doc_type,
+                    "filename": filename,
+                    "direct_answer": direct_ans,
+                    "total_responses": total_responses
+                },
+                "intent_detected": "document_generation"
             }
 
         # -------------------------------------------------------------

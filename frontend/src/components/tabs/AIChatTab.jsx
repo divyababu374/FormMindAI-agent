@@ -13,7 +13,11 @@ import {
   BarChart3, 
   FileText,
   ImageIcon,
-  RotateCcw
+  RotateCcw,
+  Download,
+  FileSpreadsheet,
+  FileCheck,
+  Loader2
 } from 'lucide-react';
 
 export const AIChatTab = () => {
@@ -21,7 +25,65 @@ export const AIChatTab = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [downloadingUrl, setDownloadingUrl] = useState(null);
   const messagesEndRef = useRef(null);
+
+  const handleDownload = async (url, filename) => {
+    try {
+      setDownloadingUrl(url);
+      await api.downloadFile(url, filename);
+    } catch (err) {
+      console.error('Download error, opening directly in new tab:', err);
+      window.open(url, '_blank');
+    } finally {
+      setDownloadingUrl(null);
+    }
+  };
+
+  const getFileTheme = (type) => {
+    switch ((type || '').toLowerCase()) {
+      case 'docx':
+        return {
+          cardBg: 'bg-gradient-to-br from-blue-50 to-indigo-50/60 border-blue-200',
+          badgeBg: 'bg-blue-600 text-white shadow-blue-500/20',
+          btnBg: 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25',
+          label: 'Word (.docx)',
+          icon: FileText
+        };
+      case 'pdf':
+        return {
+          cardBg: 'bg-gradient-to-br from-rose-50 to-red-50/60 border-rose-200',
+          badgeBg: 'bg-rose-600 text-white shadow-rose-500/20',
+          btnBg: 'bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-500/25',
+          label: 'PDF Document',
+          icon: FileText
+        };
+      case 'xlsx':
+        return {
+          cardBg: 'bg-gradient-to-br from-emerald-50 to-teal-50/60 border-emerald-200',
+          badgeBg: 'bg-emerald-600 text-white shadow-emerald-500/20',
+          btnBg: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/25',
+          label: 'Excel (.xlsx)',
+          icon: FileSpreadsheet
+        };
+      case 'csv':
+        return {
+          cardBg: 'bg-gradient-to-br from-purple-50 to-violet-50/60 border-purple-200',
+          badgeBg: 'bg-purple-600 text-white shadow-purple-500/20',
+          btnBg: 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/25',
+          label: 'Raw CSV',
+          icon: FileCheck
+        };
+      default:
+        return {
+          cardBg: 'bg-gradient-to-br from-orange-50 to-amber-50/60 border-orange-200',
+          badgeBg: 'bg-brand-600 text-white shadow-brand-500/20',
+          btnBg: 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white shadow-md shadow-brand-500/25',
+          label: 'Document',
+          icon: Download
+        };
+    }
+  };
 
   const loadHistory = async () => {
     if (!currentForm) return;
@@ -101,11 +163,13 @@ export const AIChatTab = () => {
       prompts.push("What is the average rating score?");
     }
 
+    prompts.push("Generate downloadable Word report (.docx)");
+    prompts.push("Export all responses to Excel (.xlsx)");
     prompts.push("What was the most popular topic or choice?");
     prompts.push("Show negative feedback and critiques");
     prompts.push("Summarize all responses into key insights");
 
-    return prompts.slice(0, 6);
+    return prompts.slice(0, 8);
   }, [currentForm]);
 
   // Formatter for markdown content (tables, headers, bold, bullet points)
@@ -308,8 +372,72 @@ export const AIChatTab = () => {
                     </div>
                   )}
 
+                  {/* Downloadable Document Attachment Card */}
+                  {msg.file_attachment && (
+                    <div className={`mt-3.5 p-4 rounded-2xl border shadow-sm ${getFileTheme(msg.file_attachment.file_type).cardBg}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2.5 rounded-xl shrink-0 shadow-sm ${getFileTheme(msg.file_attachment.file_type).badgeBg}`}>
+                            {React.createElement(getFileTheme(msg.file_attachment.file_type).icon, { className: "w-5 h-5" })}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs sm:text-sm font-black text-[#24110A]">
+                                {msg.file_attachment.title || 'Downloadable Document'}
+                              </h4>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                Ready
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-mono text-[#6B3B2B] mt-0.5">
+                              {msg.file_attachment.filename}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Primary Download Action Button */}
+                        <button
+                          onClick={() => handleDownload(msg.file_attachment.download_url, msg.file_attachment.filename)}
+                          disabled={downloadingUrl === msg.file_attachment.download_url}
+                          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 ${getFileTheme(msg.file_attachment.file_type).btnBg}`}
+                        >
+                          {downloadingUrl === msg.file_attachment.download_url ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Downloading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              <span>Download {getFileTheme(msg.file_attachment.file_type).label}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Other Export Formats Available */}
+                      {msg.file_attachment.other_formats && msg.file_attachment.other_formats.length > 0 && (
+                        <div className="mt-3 pt-2.5 border-t border-black/10 flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] font-bold text-[#6B3B2B]">Other formats:</span>
+                          {msg.file_attachment.other_formats.map((fmt, fIdx) => (
+                            <button
+                              key={fIdx}
+                              onClick={() => handleDownload(fmt.url, `FormMind_Export_${fmt.type}.${fmt.type}`)}
+                              disabled={downloadingUrl === fmt.url}
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-orange-50 text-[#3B1F14] border border-[#FAD5C0] text-[11px] font-semibold transition-colors flex items-center gap-1.5 shadow-xs"
+                            >
+                              <Download className="w-3 h-3 text-brand-600" />
+                              <span>{fmt.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Action Shortcuts if Intent Detected */}
-                  {msg.intent_detected === 'report_generation' && (
+                  {(msg.intent_detected === 'report_generation' || msg.intent_detected === 'document_generation') && (
                     <button
                       onClick={() => setActiveTab('reports')}
                       className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-100 text-brand-800 border border-orange-200 text-xs font-bold hover:bg-orange-200 transition-colors"

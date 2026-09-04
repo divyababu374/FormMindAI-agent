@@ -2,6 +2,7 @@ import pytest
 from app.services.chat.grounded_chat import GroundedChatEngine
 
 class MockForm:
+    id = "test-form-1234-5678"
     title = "Workshop Feedback"
     description = "Test Description"
     completion_rate = "100%"
@@ -217,3 +218,53 @@ def test_grounded_chat_age_numeric_condition_and_memory_followups():
     q5 = "what was my first question?"
     res5 = GroundedChatEngine.process_query(q5, MockForm(), questions, responses, {}, history)
     assert "how many are >=20 in age?" in res5["content"]
+
+def test_grounded_chat_generate_downloadable_docx():
+    questions = [
+        {"question_key": "Q1", "question_text": "Participant Name", "question_type": "short_answer"},
+        {"question_key": "Q2", "question_text": "Age", "question_type": "numeric", "inferred_data_type": "numeric"}
+    ]
+    responses = [
+        {"response_number": 1, "cleaned_data": {"Q1": "Divya", "Q2": 20.0}},
+        {"response_number": 2, "cleaned_data": {"Q1": "Suresh", "Q2": 24.0}}
+    ]
+
+    res = GroundedChatEngine.process_query(
+        user_message="generate a downloadable docx document as per user requirements",
+        form=MockForm(),
+        questions=questions,
+        responses=responses,
+        analysis_data={},
+        chat_history=[]
+    )
+
+    assert res["intent_detected"] == "document_generation"
+    assert res["file_attachment"] is not None
+    assert res["file_attachment"]["file_type"] == "docx"
+    assert "export/docx" in res["file_attachment"]["download_url"]
+    assert "Downloadable Document Generated" in res["content"]
+    assert len(res["file_attachment"]["other_formats"]) > 0
+
+def test_grounded_chat_generate_excel_export():
+    questions = [
+        {"question_key": "Q1", "question_text": "Participant Name", "question_type": "short_answer"},
+        {"question_key": "Q2", "question_text": "Age", "question_type": "numeric", "inferred_data_type": "numeric"}
+    ]
+    responses = [
+        {"response_number": 1, "cleaned_data": {"Q1": "Divya", "Q2": 20.0}},
+        {"response_number": 2, "cleaned_data": {"Q1": "Suresh", "Q2": 24.0}}
+    ]
+
+    res = GroundedChatEngine.process_query(
+        user_message="export responses to excel spreadsheet",
+        form=MockForm(),
+        questions=questions,
+        responses=responses,
+        analysis_data={},
+        chat_history=[]
+    )
+
+    assert res["intent_detected"] == "document_generation"
+    assert res["file_attachment"] is not None
+    assert res["file_attachment"]["file_type"] == "xlsx"
+    assert "export/xlsx" in res["file_attachment"]["download_url"]

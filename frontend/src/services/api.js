@@ -255,5 +255,21 @@ export const api = {
   getExportDocxUrl: (formId) => `${API_BASE}/forms/${formId}/export/docx`,
   getExportXlsxUrl: (formId) => `${API_BASE}/forms/${formId}/export/xlsx`,
   getExportCsvUrl: (formId) => `${API_BASE}/forms/${formId}/export/csv`,
-  getExportImageUrl: (formId, format = 'png') => `${API_BASE}/forms/${formId}/image?format=${format}`
+  getExportImageUrl: (formId, format = 'png') => `${API_BASE}/forms/${formId}/image?format=${format}`,
+
+  downloadFile: async (url, defaultFilename = 'document') => {
+    const res = await authFetch(url);
+    if (!res.ok) {
+      throw new Error(`Download failed (${res.status} ${res.statusText})`);
+    }
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = defaultFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  }
 };

@@ -17,3 +17,11 @@ ENV/
 backend/.pytest_cache/
 .DS_Store
 Thumbs.db
+
+# Node / Frontend dependencies & builds
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+.vite/
+

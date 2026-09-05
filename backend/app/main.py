@@ -42,11 +42,20 @@ from app.api.forms import router as forms_router
 from app.api.chat import router as chat_router
 from app.api.exports import router as exports_router
 
-app.include_router(auth_router, prefix=settings.API_V1_STR)
-app.include_router(forms_router, prefix=settings.API_V1_STR)
-app.include_router(chat_router, prefix=settings.API_V1_STR)
-app.include_router(exports_router, prefix=settings.API_V1_STR)
+# Include API Routers with /api prefix
+app.include_router(auth_router, prefix="/api")
+app.include_router(forms_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(exports_router, prefix="/api")
 
+# Also include API Routers without prefix so /forms/analyze, /auth/..., etc. work directly
+app.include_router(auth_router)
+app.include_router(forms_router)
+app.include_router(chat_router)
+app.include_router(exports_router)
+
+@app.get("/")
+@app.get("/health")
 @app.get("/api/health")
 def health_check():
     return {

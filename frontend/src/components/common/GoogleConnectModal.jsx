@@ -39,8 +39,8 @@ export const GoogleConnectModal = () => {
   // Advanced settings accordion
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [clientId, setClientId] = useState(googleConfig?.client_id || '');
-  const [clientSecret, setClientSecret] = useState('');
-  const [redirectUri, setRedirectUri] = useState(googleConfig?.redirect_uri || 'http://localhost:5173/auth/callback');
+  const defaultRedirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'http://localhost:5173/auth/callback';
+  const [redirectUri, setRedirectUri] = useState(googleConfig?.redirect_uri || defaultRedirectUri);
   const [configSaving, setConfigSaving] = useState(false);
 
   if (!isGoogleModalOpen) return null;

@@ -16,8 +16,8 @@ export const FormProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [loadingStep, setLoadingStep] = useState('');
-  const [error, setError] = useState(null);
-  const [googleConfig, setGoogleConfig] = useState({ is_configured: false, client_id: null, redirect_uri: 'http://localhost:5173/auth/callback' });
+  const defaultRedirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'http://localhost:5173/auth/callback';
+  const [googleConfig, setGoogleConfig] = useState({ is_configured: false, client_id: null, redirect_uri: defaultRedirectUri });
   const [googleStatus, setGoogleStatus] = useState({ is_connected: false, email: null, name: null });
 
   // Load existing forms, Google config, and check for OAuth callback code on startup

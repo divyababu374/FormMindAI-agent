@@ -1,4 +1,5 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const rawBase = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const API_BASE = rawBase === '/api' || rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('formmind_token');

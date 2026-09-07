@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from main import app
+from app.main import app
 from app.database import get_db, SessionLocal
 from app.models.user import User
 from app.models.account import ConnectedAccount, ConnectedDriveForm
@@ -104,3 +104,21 @@ def test_connected_email_and_forms_saved_in_database():
 
     finally:
         db.close()
+
+
+def test_stale_token_auto_heals_and_connects_email():
+    from app.utils.security import create_access_token
+    # Generate token for a user that does NOT exist in DB
+    fake_token = create_access_token("non_existent_ghost_user_id_12345")
+    headers = {"Authorization": f"Bearer {fake_token}"}
+
+    # Should succeed without 401 "User not found or inactive"
+    resp = client.post("/api/auth/google/connect-email", json={
+        "email": "divyababu374@gmail.com",
+        "name": "Divya Babu"
+    }, headers=headers)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["is_connected"] is True
+    assert data["email"] == "divyababu374@gmail.com"
+

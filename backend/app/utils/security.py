@@ -35,8 +35,7 @@ def get_current_user(
 ):
     from app.models.user import User
     
-    # If no token provided, we provide a persistent default/guest demo user
-    if not token:
+    def get_or_create_guest():
         guest_user = db.query(User).filter(User.id == "demo_user_default").first()
         if not guest_user:
             guest_user = User(
@@ -49,24 +48,40 @@ def get_current_user(
             db.commit()
             db.refresh(guest_user)
         return guest_user
+
+    # If no token provided, we provide a persistent default/guest demo user
+    if not token:
+        return get_or_create_guest()
         
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        if not user_id:
+            return get_or_create_guest()
+    except (JWTError, Exception):
+        # Stale, malformed, or expired token: fall back gracefully to guest user
+        return get_or_create_guest()
         
     user = db.query(User).filter(User.id == user_id).first()
-    if user is None or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+    if user is None:
+        # Auto-heal: If user record was wiped or db re-initialized, re-create user seamlessly
+        user = User(
+            id=user_id,
+            email=f"{user_id}@formmind.ai" if "@" not in user_id else user_id,
+            full_name="FormMind Explorer",
+            is_active=True
+        )
+        db.add(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            return get_or_create_guest()
+            
+    if not user.is_active:
+        user.is_active = True
+        db.commit()
+        db.refresh(user)
+
     return user

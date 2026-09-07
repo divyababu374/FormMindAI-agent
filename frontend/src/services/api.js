@@ -16,6 +16,9 @@ const authFetch = (url, options = {}) => {
 
 const handleResponse = async (res, defaultMsg = 'Request failed') => {
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('formmind_token');
+    }
     let errorDetail = defaultMsg;
     try {
       const text = await res.text();
@@ -45,16 +48,28 @@ export const api = {
   },
 
   getGoogleStatus: async () => {
-    const res = await authFetch(`${API_BASE}/auth/google/status`);
+    let res = await authFetch(`${API_BASE}/auth/google/status`);
+    if (res.status === 401) {
+      localStorage.removeItem('formmind_token');
+      res = await fetch(`${API_BASE}/auth/google/status`);
+    }
     return handleResponse(res, 'Failed to get Google account status');
   },
 
   connectGoogleEmail: async (email, name = null) => {
-    const res = await authFetch(`${API_BASE}/auth/google/connect-email`, {
+    let res = await authFetch(`${API_BASE}/auth/google/connect-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name }),
     });
+    if (res.status === 401) {
+      localStorage.removeItem('formmind_token');
+      res = await fetch(`${API_BASE}/auth/google/connect-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name }),
+      });
+    }
     const data = await handleResponse(res, 'Failed to connect email');
     if (data.access_token) {
       localStorage.setItem('formmind_token', data.access_token);

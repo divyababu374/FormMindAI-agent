@@ -128,23 +128,23 @@ export const GoogleConnectModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-[#FAD5C0] rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white border border-[#FAD5C0] rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl relative overflow-hidden animate-in fade-in duration-200 max-h-[92dvh] overflow-y-auto">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#FDE4D7]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FFF8F4] border border-[#FDE4D7] flex items-center justify-center shadow-sm p-2">
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#FDE4D7] shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#FFF8F4] border border-[#FDE4D7] flex items-center justify-center shadow-sm p-2 shrink-0">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
                 <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
               </svg>
             </div>
-            <div>
-              <h3 className="text-lg font-black text-[#24110A]">Connect Google / Gmail ID</h3>
-              <p className="text-xs text-[#6B3B2B] font-medium">Unlock form response analysis & multi-format reports</p>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-black text-[#24110A] truncate">Connect Google / Gmail ID</h3>
+              <p className="text-[11px] sm:text-xs text-[#6B3B2B] font-medium truncate">Unlock form response analysis & multi-format reports</p>
             </div>
           </div>
 
@@ -154,14 +154,14 @@ export const GoogleConnectModal = () => {
               setErrorMsg('');
               setSuccessMsg('');
             }}
-            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="mt-5 space-y-4">
+        <div className="mt-4 sm:mt-5 space-y-4">
           
           {/* Status Section if Connected */}
           {googleStatus?.is_connected ? (

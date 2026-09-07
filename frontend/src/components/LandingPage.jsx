@@ -84,30 +84,30 @@ export const LandingPage = () => {
       <div className="absolute top-1/2 -right-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* Hero Section */}
-      <section className="max-w-5xl mx-auto pt-16 sm:pt-24 px-4 text-center">
+      <section className="max-w-5xl mx-auto pt-10 sm:pt-20 px-4 text-center">
         
         {/* Top Announcement Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/90 border border-orange-300 text-orange-950 text-xs font-bold mb-6 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-          <span>Next-Gen Survey Intelligence & Grounded Chat</span>
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-orange-100/90 border border-orange-300 text-orange-950 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-sm max-w-full">
+          <Sparkles className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+          <span className="truncate">Next-Gen Survey Intelligence & Grounded Chat</span>
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#24110A] tracking-tight leading-[1.1]">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#24110A] tracking-tight leading-[1.15] sm:leading-[1.1]">
           Turn your Google & Microsoft Forms <br className="hidden sm:block" />
           <span className="gradient-text">into intelligent insights</span>.
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-6 text-base sm:text-lg text-[#522A1A] font-medium max-w-3xl mx-auto leading-relaxed">
+        <p className="mt-4 sm:mt-6 text-sm sm:text-base text-[#522A1A] font-medium max-w-3xl mx-auto leading-relaxed">
           Connect any Google Form or Microsoft Forms link, analyze every response with verified statistical models, 
           chat with your survey data in natural language, and generate executive reports in seconds.
         </p>
 
         {/* Hero Form URL Input Bar */}
-        <div className="mt-10 max-w-2xl mx-auto">
+        <div className="mt-8 sm:mt-10 max-w-2xl mx-auto">
           <form onSubmit={handleQuickAnalyze} className="relative group">
-            <div className="flex flex-col sm:flex-row items-stretch gap-2 p-2 rounded-2xl bg-white border-2 border-[#FAD5C0] shadow-xl hover:border-brand-500 transition-all">
+            <div className="flex flex-col sm:flex-row items-stretch gap-2 p-1.5 sm:p-2 rounded-2xl bg-white border-2 border-[#FAD5C0] shadow-xl hover:border-brand-500 transition-all">
               <input
                 type="url"
                 value={inputUrl}
@@ -115,15 +115,15 @@ export const LandingPage = () => {
                   setInputUrl(e.target.value);
                   if (inputError) setInputError('');
                 }}
-                placeholder="Paste your Google Form or Microsoft Forms link (e.g. forms.office.com/r/...)"
-                className="flex-1 bg-transparent px-4 py-3 text-sm text-[#24110A] placeholder-[#8D5A46] focus:outline-none font-medium"
+                placeholder="Paste your Google Form or Microsoft Forms link..."
+                className="flex-1 bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#24110A] placeholder-[#8D5A46] focus:outline-none font-medium min-w-0"
               />
               <button
                 type="submit"
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-sm font-bold shadow-lg shadow-brand-500/25 transition-all active:scale-95 whitespace-nowrap"
+                className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-brand-500/25 transition-all active:scale-95 whitespace-nowrap"
               >
                 <span>Analyze Form</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
             </div>
             {inputError && (
@@ -134,30 +134,32 @@ export const LandingPage = () => {
           </form>
 
           {/* Quick Demo Dataset Launchers */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+          <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-2.5">
             <span className="text-xs text-[#522A1A] font-bold">Instant demo surveys:</span>
-            <button
-              onClick={() => analyzeDemo('ms_employee_feedback', 'Microsoft 365 Workplace Engagement Survey')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-300 text-xs font-bold text-sky-900 transition-colors shadow-sm"
-              title="Try verified Microsoft Forms demo"
-            >
-              <Play className="w-3 h-3 text-sky-600 fill-sky-600" />
-              <span>Microsoft Forms Demo (25 responses)</span>
-            </button>
-            <button
-              onClick={() => analyzeDemo('workshop_feedback', 'Full-Stack AI Workshop Feedback')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm"
-            >
-              <Play className="w-3 h-3 text-brand-600 fill-brand-600" />
-              <span>Google Form: Workshop (248 responses)</span>
-            </button>
-            <button
-              onClick={() => analyzeDemo('customer_nps', 'Enterprise SaaS Customer NPS')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm"
-            >
-              <Play className="w-3 h-3 text-brand-600 fill-brand-600" />
-              <span>Customer NPS (185 responses)</span>
-            </button>
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => analyzeDemo('ms_employee_feedback', 'Microsoft 365 Workplace Engagement Survey')}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-300 text-xs font-bold text-sky-900 transition-colors shadow-sm w-full sm:w-auto text-center"
+                title="Try verified Microsoft Forms demo"
+              >
+                <Play className="w-3 h-3 text-sky-600 fill-sky-600 shrink-0" />
+                <span>Microsoft Forms Demo (25 responses)</span>
+              </button>
+              <button
+                onClick={() => analyzeDemo('workshop_feedback', 'Full-Stack AI Workshop Feedback')}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
+              >
+                <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
+                <span>Google Form: Workshop (248 responses)</span>
+              </button>
+              <button
+                onClick={() => analyzeDemo('customer_nps', 'Enterprise SaaS Customer NPS')}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
+              >
+                <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
+                <span>Customer NPS (185 responses)</span>
+              </button>
+            </div>
           </div>
         </div>
 

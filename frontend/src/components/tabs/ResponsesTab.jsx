@@ -61,10 +61,10 @@ export const ResponsesTab = () => {
     <div className="space-y-4">
       
       {/* Search & Actions Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-[#FAD5C0] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-white border border-[#FAD5C0] shadow-sm">
         
         {/* Search Input */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 text-[#8C5D4B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
@@ -76,32 +76,32 @@ export const ResponsesTab = () => {
         </form>
 
         {/* View Mode & CSV Download */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
           <div className="flex items-center p-1 bg-[#FFF2EB] rounded-xl border border-[#FAD5C0] text-xs">
             <button
               onClick={() => setViewMode('cleaned')}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg font-bold transition-colors text-xs ${
                 viewMode === 'cleaned' ? 'bg-brand-600 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'
               }`}
             >
-              Cleaned Data
+              Cleaned
             </button>
             <button
               onClick={() => setViewMode('raw')}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg font-bold transition-colors text-xs ${
                 viewMode === 'raw' ? 'bg-brand-600 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'
               }`}
             >
-              Raw Original
+              Raw
             </button>
           </div>
 
           <a
             href={api.getExportCsvUrl(currentForm?.id)}
             download
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm shrink-0"
           >
-            <Download className="w-3.5 h-3.5 text-brand-600" />
+            <Download className="w-3.5 h-3.5 text-brand-600 shrink-0" />
             <span>Export CSV</span>
           </a>
         </div>
@@ -109,15 +109,17 @@ export const ResponsesTab = () => {
 
       {/* Data Table */}
       <div className="rounded-2xl border border-[#FAD5C0] bg-white overflow-hidden shadow-sm">
-        <div className="overflow-x-auto max-h-[550px]">
+        <div className="overflow-x-auto max-h-[550px] touch-scroll overscroll-x-contain">
           <table className="w-full text-left text-xs text-[#24110A]">
-            <thead className="sticky top-0 z-10 bg-[#FFF2EB] border-b border-[#FAD5C0] text-[#8C2C08] uppercase font-bold">
+            <thead className="sticky top-0 z-20 bg-[#FFF2EB] border-b border-[#FAD5C0] text-[#8C2C08] uppercase font-bold">
               <tr>
-                {data.columns?.map((col) => (
+                {data.columns?.map((col, cIdx) => (
                   <th
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className="px-4 py-3 cursor-pointer hover:text-brand-800 transition-colors whitespace-nowrap"
+                    className={`px-3 sm:px-4 py-3 cursor-pointer hover:text-brand-800 transition-colors whitespace-nowrap ${
+                      cIdx === 0 ? 'sticky left-0 bg-[#FFF2EB] z-30 shadow-[2px_0_4px_-1px_rgba(249,115,66,0.1)]' : ''
+                    }`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>{col.label}</span>
@@ -147,18 +149,18 @@ export const ResponsesTab = () => {
                   const displayRow = viewMode === 'cleaned' ? row.cleaned_data : row.raw_data;
                   return (
                     <tr key={row.id} className="hover:bg-[#FFF8F4] transition-colors">
-                      <td className="px-4 py-3 font-black text-[#24110A]">
+                      <td className="sticky left-0 bg-white group-hover:bg-[#FFF8F4] px-3 sm:px-4 py-3 font-black text-[#24110A] z-10 shadow-[2px_0_4px_-1px_rgba(249,115,66,0.1)]">
                         #{row.response_number}
                       </td>
-                      <td className="px-4 py-3 text-[#6B3B2B] font-medium whitespace-nowrap">
+                      <td className="px-3 sm:px-4 py-3 text-[#6B3B2B] font-medium whitespace-nowrap">
                         {row.submission_timestamp
-                          ? new Date(row.submission_timestamp).toLocaleString()
+                          ? new Date(row.submission_timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                           : 'N/A'}
                       </td>
                       {data.columns?.slice(2).map((col) => {
                         const val = viewMode === 'cleaned' ? displayRow?.[col.key] : displayRow?.[col.label];
                         return (
-                          <td key={col.key} className="px-4 py-3 max-w-xs truncate text-[#24110A] font-medium">
+                          <td key={col.key} className="px-3 sm:px-4 py-3 max-w-xs truncate text-[#24110A] font-medium">
                             {Array.isArray(val) ? (
                               <div className="flex flex-wrap gap-1">
                                 {val.map((item, idx) => (
@@ -184,8 +186,8 @@ export const ResponsesTab = () => {
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-[#FDE4D7] bg-[#FFF7F2] flex items-center justify-between text-xs text-[#6B3B2B] font-medium">
-          <div>
+        <div className="p-3 sm:p-4 border-t border-[#FDE4D7] bg-[#FFF7F2] flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-[#6B3B2B] font-medium">
+          <div className="text-center sm:text-left">
             Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.total)} of {data.total} responses
           </div>
 
@@ -194,6 +196,7 @@ export const ResponsesTab = () => {
               disabled={page <= 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
               className="p-1.5 rounded-lg bg-white hover:bg-[#FFF2EB] border border-[#FAD5C0] disabled:opacity-30 disabled:pointer-events-none text-[#24110A] transition-colors shadow-sm"
+              aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -204,6 +207,7 @@ export const ResponsesTab = () => {
               disabled={page >= data.total_pages}
               onClick={() => setPage(p => Math.min(data.total_pages, p + 1))}
               className="p-1.5 rounded-lg bg-white hover:bg-[#FFF2EB] border border-[#FAD5C0] disabled:opacity-30 disabled:pointer-events-none text-[#24110A] transition-colors shadow-sm"
+              aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

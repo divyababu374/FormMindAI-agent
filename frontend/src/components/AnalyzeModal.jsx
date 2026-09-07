@@ -117,18 +117,18 @@ export const AnalyzeModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-[#FAD5C0] rounded-3xl max-w-xl w-full p-6 shadow-2xl relative overflow-hidden animate-in fade-in duration-200 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white border border-[#FAD5C0] rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl relative overflow-hidden animate-in fade-in duration-200 max-h-[92dvh] flex flex-col">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#FDE4D7] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-orange-100 text-brand-700 border border-orange-200">
-              <Sparkles className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#FDE4D7] shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-orange-100 text-brand-700 border border-orange-200 shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-black text-[#24110A]">Import & Analyze Form</h3>
-              <p className="text-xs text-[#6B3B2B] font-medium">Ingest responses from Google Forms, Microsoft Forms, or files</p>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-black text-[#24110A] truncate">Import & Analyze Form</h3>
+              <p className="text-[11px] sm:text-xs text-[#6B3B2B] font-medium truncate">Ingest responses from Google Forms, Microsoft Forms, or files</p>
             </div>
           </div>
           <button
@@ -137,40 +137,40 @@ export const AnalyzeModal = () => {
               setFormError('');
               setShowDriveForms(false);
             }}
-            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-2 p-1 bg-[#FFF2EB] rounded-xl mt-4 border border-[#FAD5C0] shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 p-1 bg-[#FFF2EB] rounded-xl mt-3 sm:mt-4 border border-[#FAD5C0] shrink-0">
           <button
             onClick={() => { setActiveTab('url'); setFormError(''); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all truncate ${
               activeTab === 'url' ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'
             }`}
           >
-            <LinkIcon className="w-3.5 h-3.5" />
-            <span>Google / MS Form</span>
+            <LinkIcon className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Google / MS</span>
           </button>
           <button
             onClick={() => { setActiveTab('upload'); setFormError(''); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all truncate ${
               activeTab === 'upload' ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'
             }`}
           >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Upload CSV / Excel</span>
+            <UploadCloud className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">CSV / Excel</span>
           </button>
           <button
             onClick={() => { setActiveTab('demo'); setFormError(''); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all truncate ${
               activeTab === 'demo' ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'
             }`}
           >
-            <Play className="w-3.5 h-3.5" />
-            <span>Sample Forms</span>
+            <Play className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Samples</span>
           </button>
         </div>
 

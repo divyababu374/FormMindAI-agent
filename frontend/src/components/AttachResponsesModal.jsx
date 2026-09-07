@@ -60,39 +60,39 @@ export const AttachResponsesModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-xl rounded-3xl bg-white border border-[#FAD5C0] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-xl rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-6 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-brand-700">
-              <FileSpreadsheet className="w-5 h-5" />
+        <div className="p-4 sm:p-6 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2] shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-brand-700 shrink-0">
+              <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-black text-[#24110A] flex items-center gap-2">
-                Attach Form Responses
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-brand-800 border border-orange-200 font-bold">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-black text-[#24110A] flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span>Attach Responses</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-brand-800 border border-orange-200 font-bold max-w-[140px] sm:max-w-[200px] truncate">
                   {currentForm.title}
                 </span>
               </h3>
-              <p className="text-xs text-[#6B3B2B] font-medium">
+              <p className="text-[11px] sm:text-xs text-[#6B3B2B] font-medium truncate">
                 Provide respondent data via Google Sheets link or downloaded CSV
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors shrink-0 ml-2"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6">
           {/* Tab Selector */}
           <div className="grid grid-cols-2 p-1 rounded-2xl bg-[#FFF2EB] border border-[#FAD5C0]">
             <button

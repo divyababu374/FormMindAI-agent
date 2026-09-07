@@ -19,14 +19,14 @@ export const QuestionsTab = () => {
   return (
     <div className="space-y-6">
       
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-[#FDE4D7]">
         <div>
-          <h3 className="text-lg font-bold text-white">Question-by-Question Analysis</h3>
-          <p className="text-xs text-slate-400">Detailed statistical breakdown and distribution charts for all {questions.length} questions</p>
+          <h3 className="text-lg font-black text-[#24110A]">Question-by-Question Analysis</h3>
+          <p className="text-xs text-[#6B3B2B] font-medium">Detailed statistical breakdown and distribution charts for all {questions.length} questions</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
         {questions.map((q, idx) => {
           const k = q.question_key;
           const numData = numerical[k];
@@ -37,7 +37,7 @@ export const QuestionsTab = () => {
           return (
             <div
               key={q.id || idx}
-              className="p-6 rounded-3xl bg-white border border-[#FAD5C0] hover:border-brand-400 transition-all shadow-sm"
+              className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] hover:border-brand-400 transition-all shadow-sm"
             >
               {/* Question Card Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-[#FDE4D7]">

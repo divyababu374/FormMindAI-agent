@@ -41,30 +41,30 @@ export const MyFormsModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-[#FAD5C0] rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white border border-[#FAD5C0] rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[92dvh]">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#FDE4D7]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-orange-100 text-brand-700 border border-orange-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-orange-100 text-brand-700 border border-orange-200 shrink-0">
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-black text-[#24110A]">My Analyzed Forms</h3>
-              <p className="text-xs text-[#6B3B2B] font-medium">Switch datasets, manage survey sessions, or delete records</p>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-black text-[#24110A] truncate">My Analyzed Forms</h3>
+              <p className="text-xs text-[#6B3B2B] font-medium line-clamp-1">Switch datasets, manage survey sessions, or delete records</p>
             </div>
           </div>
           <button
             onClick={() => setIsMyFormsModalOpen(false)}
-            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B3B2B] hover:text-[#24110A] hover:bg-[#FFF2EB] transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Forms List */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+        <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 touch-scroll">
           {forms.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-sm text-[#6B3B2B] font-medium">No forms analyzed yet.</p>
@@ -86,19 +86,19 @@ export const MyFormsModal = () => {
               return (
                 <div
                   key={f.id}
-                  className={`p-4 rounded-2xl border transition-all ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                     isActive
                       ? 'bg-orange-50/90 border-brand-500 shadow-md ring-2 ring-brand-500/30'
                       : 'bg-white border-[#FAD5C0] hover:border-brand-400 hover:bg-[#FFFAF7] shadow-sm'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-[#24110A] truncate">{f.title}</h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-black text-[#24110A] truncate max-w-full">{f.title}</h4>
                         {isActive && <Badge variant="peach">Active Form</Badge>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-[#6B3B2B] font-medium mt-2">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#6B3B2B] font-medium mt-2">
                         <span className="flex items-center gap-1">
                           <Users className="w-3.5 h-3.5 text-[#6B3B2B]" />
                           <span>{f.total_responses_count} responses</span>
@@ -114,7 +114,7 @@ export const MyFormsModal = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                       {!isActive && (
                         <button
                           onClick={() => {
@@ -162,7 +162,7 @@ export const MyFormsModal = () => {
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-[#FDE4D7] flex items-center justify-between">
+        <div className="pt-4 border-t border-[#FDE4D7] flex items-center justify-between gap-2">
           <button
             onClick={() => {
               setIsMyFormsModalOpen(false);
@@ -171,7 +171,7 @@ export const MyFormsModal = () => {
             className="flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 transition-colors"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Analyze Another Form</span>
+            <span>Analyze Another</span>
           </button>
           <button
             onClick={() => setIsMyFormsModalOpen(false)}

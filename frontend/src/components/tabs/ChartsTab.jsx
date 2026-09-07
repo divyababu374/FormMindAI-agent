@@ -27,14 +27,14 @@ export const ChartsTab = () => {
   return (
     <div className="space-y-6">
       
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-[#FDE4D7]">
         <div>
-          <h3 className="text-lg font-bold text-white">Interactive Chart Gallery</h3>
-          <p className="text-xs text-slate-400">Explore distribution visualizations with dynamic chart switchers</p>
+          <h3 className="text-lg font-black text-[#24110A]">Interactive Chart Gallery</h3>
+          <p className="text-xs text-[#6B3B2B] font-medium">Explore distribution visualizations with dynamic chart switchers</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {chartableQuestions.map((q) => {
           const k = q.question_key;
           const num = numerical[k];
@@ -52,17 +52,17 @@ export const ChartsTab = () => {
           return (
             <div
               key={k}
-              className="p-6 rounded-3xl bg-white border border-[#FAD5C0] shadow-sm flex flex-col justify-between"
+              className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-sm flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start justify-between gap-2 mb-4">
-                  <div>
+                <div className="flex items-start justify-between gap-2 mb-4 flex-wrap">
+                  <div className="min-w-0 flex-1">
                     <h4 className="text-sm font-extrabold text-[#24110A] truncate max-w-xs">{q.question_text}</h4>
                     <p className="text-xs text-[#6B3B2B] mt-0.5 font-medium">{dist.length} categories / buckets</p>
                   </div>
 
                   {/* Chart Type Selector Pills */}
-                  <div className="flex items-center gap-1 bg-[#FFF2EB] p-1 rounded-xl border border-[#FAD5C0]">
+                  <div className="flex items-center gap-1 bg-[#FFF2EB] p-1 rounded-xl border border-[#FAD5C0] shrink-0">
                     <button
                       onClick={() => toggleChartType(k, 'bar')}
                       className={`p-1.5 rounded-lg text-xs transition-colors ${currentType === 'bar' ? 'bg-brand-600 text-white shadow-sm' : 'text-[#6B3B2B] hover:text-[#24110A]'}`}
@@ -97,9 +97,9 @@ export const ChartsTab = () => {
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <div className="mt-4 pt-3 border-t border-[#FDE4D7] flex items-center justify-between text-xs text-[#6B3B2B]">
                 <span>Total Samples: {activeData.count || currentForm?.total_responses_count}</span>
-                <span className="text-brand-400 font-medium">Verified Visualization</span>
+                <span className="text-brand-600 font-semibold">Verified Visualization</span>
               </div>
             </div>
           );

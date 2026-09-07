@@ -130,12 +130,12 @@ export const ReportsTab = () => {
       const dataRows = currentTable.slice(1).filter(r => !r.every(c => /^:?-+:?$/.test(c.trim())));
 
       nodes.push(
-        <div key={`table-${key}`} className="my-4 overflow-x-auto rounded-2xl border border-[#FAD5C0] bg-white shadow-sm">
-          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+        <div key={`table-${key}`} className="my-4 overflow-x-auto touch-scroll rounded-2xl border border-[#FAD5C0] bg-white shadow-sm -mx-2 sm:mx-0">
+          <table className="w-full min-w-[500px] text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr className="bg-[#FFF2EB] border-b border-[#FAD5C0]">
                 {headerRow.map((col, ci) => (
-                  <th key={ci} className="py-3 px-4 font-bold text-[#8C2C08] uppercase tracking-wider text-[11px]">
+                  <th key={ci} className="py-2.5 sm:py-3 px-3 sm:px-4 font-bold text-[#8C2C08] uppercase tracking-wider text-[10px] sm:text-[11px]">
                     {renderInline(col)}
                   </th>
                 ))}
@@ -145,7 +145,7 @@ export const ReportsTab = () => {
               {dataRows.map((row, ri) => (
                 <tr key={ri} className={ri % 2 === 0 ? "bg-[#FFFAF7]" : "bg-white"}>
                   {row.map((col, ci) => (
-                    <td key={ci} className="py-2.5 px-4 text-[#24110A] font-medium">
+                    <td key={ci} className="py-2 sm:py-2.5 px-3 sm:px-4 text-[#24110A] font-medium leading-relaxed">
                       {renderInline(col)}
                     </td>
                   ))}
@@ -247,14 +247,14 @@ export const ReportsTab = () => {
     <div className="space-y-6">
       
       {/* Header & Export Download Toolbar */}
-      <div className="p-6 rounded-3xl bg-white border border-[#FAD5C0] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-sm">
-        <div>
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-5 shadow-sm">
+        <div className="w-full lg:w-auto">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20">
-              <FileCheck className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20 shrink-0">
+              <FileCheck className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-[#24110A]">Reports & Multi-Format Exports</h3>
+              <h3 className="text-base sm:text-lg font-black text-[#24110A]">Reports & Multi-Format Exports</h3>
               <p className="text-xs text-[#6B3B2B] font-medium mt-0.5">
                 Verified analytical documents formatted with tabular columns and executive summaries.
               </p>
@@ -262,46 +262,46 @@ export const ReportsTab = () => {
           </div>
         </div>
 
-        {/* Clean Export Download Actions */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+        {/* Clean Export Download Actions (2 cols on mobile, flex on tablet/desktop) */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
           <a
             href={api.getExportPdfUrl(currentForm?.id)}
             download
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all active:scale-95"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all active:scale-95 text-center"
             title="Download PDF Analytical Document"
           >
-            <Download className="w-4 h-4" />
-            <span>PDF Document</span>
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">PDF Document</span>
           </a>
 
           <a
             href={api.getExportDocxUrl(currentForm?.id)}
             download
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm text-center"
             title="Download Microsoft Word .DOCX Document"
           >
-            <Download className="w-4 h-4 text-blue-700" />
-            <span>Word (.docx)</span>
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-700 shrink-0" />
+            <span className="truncate">Word (.docx)</span>
           </a>
 
           <a
             href={api.getExportXlsxUrl(currentForm?.id)}
             download
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm text-center"
             title="Download 5-Sheet Excel Workbook"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-            <span>Excel (.xlsx)</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700 shrink-0" />
+            <span className="truncate">Excel (.xlsx)</span>
           </a>
 
           <a
             href={api.getExportCsvUrl(currentForm?.id)}
             download
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-[#3B1F14] text-xs font-bold border border-[#FAD5C0] transition-colors shadow-sm text-center"
             title="Download Raw CSV Data"
           >
-            <Download className="w-4 h-4 text-purple-700" />
-            <span>Raw CSV</span>
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-700 shrink-0" />
+            <span className="truncate">Raw CSV</span>
           </a>
         </div>
       </div>
@@ -318,7 +318,7 @@ export const ReportsTab = () => {
                 setReportType(preset.id);
                 fetchReport(preset.id);
               }}
-              className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between ${
+              className={`p-3.5 sm:p-4 rounded-2xl text-left border transition-all flex flex-col justify-between active:scale-[0.99] ${
                 isSelected
                   ? 'bg-orange-50/90 border-brand-500 shadow-md ring-2 ring-brand-500/30'
                   : 'bg-white border-[#FAD5C0] hover:border-brand-400 hover:bg-[#FFFAF7] shadow-sm'
@@ -345,12 +345,12 @@ export const ReportsTab = () => {
       </div>
 
       {/* Report Document Box */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#FAD5C0] relative shadow-md">
+      <div className="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] relative shadow-md">
         
         {/* Controls Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-5 mb-6 border-b border-[#FDE4D7]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-5 mb-5 sm:mb-6 border-b border-[#FDE4D7]">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
+            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
@@ -359,65 +359,67 @@ export const ReportsTab = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
             <div className="flex items-center p-1 rounded-xl bg-[#FFF2EB] border border-[#FAD5C0] text-xs">
               <button
                 onClick={() => setViewMode('formatted')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all text-xs ${
                   viewMode === 'formatted'
                     ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm'
                     : 'text-[#6B3B2B] hover:text-[#24110A]'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-3.5 h-3.5 shrink-0" />
                 <span>Document View</span>
               </button>
               <button
                 onClick={() => setViewMode('raw')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all text-xs ${
                   viewMode === 'raw'
                     ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm'
                     : 'text-[#6B3B2B] hover:text-[#24110A]'
                 }`}
               >
-                <Code2 className="w-3.5 h-3.5" />
+                <Code2 className="w-3.5 h-3.5 shrink-0" />
                 <span>Raw Markdown</span>
               </button>
             </div>
 
-            <button
-              onClick={handleCopyMarkdown}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-xs text-[#3B1F14] font-bold transition-colors border border-[#FAD5C0] shadow-sm"
-              title="Copy markdown text"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopyMarkdown}
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-xs text-[#3B1F14] font-bold transition-colors border border-[#FAD5C0] shadow-sm"
+                title="Copy markdown text"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
 
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-xs text-[#3B1F14] font-bold transition-colors border border-[#FAD5C0] shadow-sm"
-              title="Print document"
-            >
-              <Printer className="w-3.5 h-3.5 text-[#3B1F14]" />
-              <span>Print</span>
-            </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-[#FFF2EB] hover:bg-[#FFE6D9] text-xs text-[#3B1F14] font-bold transition-colors border border-[#FAD5C0] shadow-sm"
+                title="Print document"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#3B1F14]" />
+                <span>Print</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Main Content Area */}
         {isGenerating ? (
-          <div className="py-24 text-center text-[#6B3B2B] flex flex-col items-center justify-center gap-3">
+          <div className="py-16 sm:py-24 text-center text-[#6B3B2B] flex flex-col items-center justify-center gap-3">
             <Sparkles className="w-8 h-8 text-brand-600 animate-spin" />
-            <span className="text-sm font-bold text-[#24110A]">Generating report document with verified survey calculations...</span>
+            <span className="text-xs sm:text-sm font-bold text-[#24110A]">Generating report document with verified survey calculations...</span>
           </div>
         ) : viewMode === 'formatted' ? (
-          <div className="bg-[#FFFAF7] p-6 sm:p-10 rounded-2xl border border-[#FDE4D7] shadow-inner max-h-[750px] overflow-y-auto">
+          <div className="bg-[#FFFAF7] p-4 sm:p-10 rounded-2xl border border-[#FDE4D7] shadow-inner max-h-[750px] overflow-y-auto overflow-x-hidden">
             {renderedSections}
           </div>
         ) : (
-          <div className="bg-[#FFF8F4] p-6 rounded-2xl border border-[#FDE4D7] max-h-[750px] overflow-y-auto text-xs font-mono text-[#24110A] whitespace-pre-wrap leading-relaxed">
+          <div className="bg-[#FFF8F4] p-4 sm:p-6 rounded-2xl border border-[#FDE4D7] max-h-[750px] overflow-y-auto overflow-x-auto text-xs font-mono text-[#24110A] whitespace-pre-wrap leading-relaxed">
             {reportContent}
           </div>
         )}

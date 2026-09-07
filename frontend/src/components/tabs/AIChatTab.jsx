@@ -276,29 +276,29 @@ export const AIChatTab = () => {
   };
 
   return (
-    <div className="flex flex-col h-[720px] rounded-3xl bg-white border border-[#FAD5C0] overflow-hidden shadow-md">
+    <div className="flex flex-col h-[calc(100dvh-180px)] sm:h-[720px] min-h-[480px] max-h-[820px] rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] overflow-hidden shadow-md">
       
       {/* Chat Header */}
-      <div className="p-4 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2]">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20">
-            <Bot className="w-5 h-5" />
+      <div className="p-3 sm:p-4 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2]">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20 shrink-0">
+            <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black text-[#24110A]">FormMind AI Intelligence Chat</h3>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h3 className="text-xs sm:text-sm font-black text-[#24110A] truncate">Form Intelligence Chat</h3>
               <Badge variant="peach">Zero Hallucinations</Badge>
             </div>
-            <p className="text-[11px] text-[#6B3B2B] font-medium">100% grounded in your exact survey answers & participant submissions</p>
+            <p className="text-[10px] sm:text-[11px] text-[#6B3B2B] font-medium truncate">Grounded in verified respondent submissions</p>
           </div>
         </div>
 
         <button
           onClick={handleClearHistory}
-          className="p-2 rounded-xl bg-white hover:bg-[#FFF2EB] text-[#6B3B2B] hover:text-[#24110A] border border-[#FAD5C0] transition-colors shadow-sm"
+          className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-[#FFF2EB] text-[#6B3B2B] hover:text-[#24110A] border border-[#FAD5C0] transition-colors shadow-sm shrink-0 ml-2"
           title="Reset conversation"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </div>
 
@@ -332,22 +332,22 @@ export const AIChatTab = () => {
             return (
               <div
                 key={msg.id || idx}
-                className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex items-start gap-2 sm:gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 ${
                     isUser
                       ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
                       : 'bg-orange-100 border border-orange-200 text-brand-700'
                   }`}
                 >
-                  {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                  {isUser ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 </div>
 
                 {/* Message Bubble */}
                 <div
-                  className={`p-4 rounded-2xl max-w-xl text-xs sm:text-sm leading-relaxed ${
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl max-w-[88%] sm:max-w-xl text-xs sm:text-sm leading-relaxed break-words ${
                     isUser
                       ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/10 whitespace-pre-wrap font-medium'
                       : 'bg-white border border-[#FAD5C0] text-[#24110A] shadow-sm font-medium'
@@ -481,13 +481,13 @@ export const AIChatTab = () => {
 
       {/* Suggested Follow-Up Chips */}
       {dynamicPrompts.length > 0 && messages.length > 0 && (
-        <div className="px-4 py-2 border-t border-[#FDE4D7] bg-[#FFF7F2] flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="text-[11px] text-[#6B3B2B] font-bold shrink-0">Suggestions:</span>
-          {dynamicPrompts.slice(0, 4).map((chip, idx) => (
+        <div className="px-3 sm:px-4 py-2 border-t border-[#FDE4D7] bg-[#FFF7F2] flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar touch-scroll text-xs">
+          <span className="text-[10px] sm:text-[11px] text-[#6B3B2B] font-bold shrink-0">Suggestions:</span>
+          {dynamicPrompts.slice(0, 5).map((chip, idx) => (
             <button
               key={idx}
               onClick={() => handleSendMessage(chip)}
-              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FFF2EB] text-[#3B1F14] hover:text-[#24110A] border border-[#FAD5C0] whitespace-nowrap transition-colors font-semibold shadow-sm"
+              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FFF2EB] text-[#3B1F14] hover:text-[#24110A] border border-[#FAD5C0] whitespace-nowrap transition-colors font-semibold shadow-sm shrink-0 text-xs"
             >
               {chip}
             </button>
@@ -496,7 +496,7 @@ export const AIChatTab = () => {
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-[#FDE4D7] bg-[#FFF7F2]">
+      <div className="p-2.5 sm:p-4 border-t border-[#FDE4D7] bg-[#FFF7F2]">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -508,13 +508,14 @@ export const AIChatTab = () => {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask anything (e.g., 'What are the answers to question 2?', 'Show Suresh's response')..."
-            className="flex-1 bg-white border border-[#FAD5C0] rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#24110A] placeholder-[#8C5D4B] focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-inner"
+            placeholder="Ask anything about this form..."
+            className="flex-1 min-w-0 bg-white border border-[#FAD5C0] rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#24110A] placeholder-[#8C5D4B] focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-inner"
           />
           <button
             type="submit"
             disabled={!inputValue.trim() || isSending}
-            className="p-3 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 disabled:opacity-40 text-white shadow-md shadow-brand-500/20 transition-all active:scale-95"
+            className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 disabled:opacity-40 text-white shadow-md shadow-brand-500/20 transition-all active:scale-95 shrink-0"
+            aria-label="Send message"
           >
             <Send className="w-4 h-4" />
           </button>

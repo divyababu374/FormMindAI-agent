@@ -79,17 +79,17 @@ export const OverviewTab = () => {
       </div>
 
       {/* Executive Summary & AI Narrative Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-orange-50 via-white to-orange-50/70 border border-[#FAD5C0] shadow-sm relative overflow-hidden">
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-2xl bg-orange-100 text-brand-700 border border-orange-200 shrink-0 shadow-sm">
-            <Sparkles className="w-6 h-6" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-orange-50 via-white to-orange-50/70 border border-[#FAD5C0] shadow-sm relative overflow-hidden">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-orange-100 text-brand-700 border border-orange-200 shrink-0 shadow-sm">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-[#24110A] tracking-tight">Executive AI Summary</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-base font-black text-[#24110A] tracking-tight">Executive AI Summary</h3>
               <Badge variant="green">Grounded Math Models</Badge>
             </div>
-            <p className="text-sm text-[#4A281A] mt-2 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#4A281A] mt-2 font-medium leading-relaxed">
               {insights.executive_summary || 'Survey responses have been completely ingested and structured. Detailed statistical distributions and thematic patterns are ready for exploration.'}
             </p>
           </div>
@@ -101,9 +101,9 @@ export const OverviewTab = () => {
         
         {/* Rating / Score Distribution */}
         {firstNum ? (
-          <div className="p-6 rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
+            <div className="flex items-start sm:items-center justify-between gap-2 mb-4 flex-wrap">
+              <div className="min-w-0 flex-1">
                 <h4 className="text-sm font-extrabold text-[#24110A] truncate max-w-sm">
                   {firstNum.question_text}
                 </h4>
@@ -124,9 +124,9 @@ export const OverviewTab = () => {
 
         {/* Top Category Distribution */}
         {firstCat ? (
-          <div className="p-6 rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
+            <div className="flex items-start sm:items-center justify-between gap-2 mb-4 flex-wrap">
+              <div className="min-w-0 flex-1">
                 <h4 className="text-sm font-extrabold text-[#24110A] truncate max-w-sm">
                   {firstCat.question_text}
                 </h4>
@@ -151,15 +151,15 @@ export const OverviewTab = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Key Calculated Facts */}
-        <div className="lg:col-span-2 p-6 rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
+        <div className="lg:col-span-2 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-sm">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#FDE4D7]">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-700" />
+              <TrendingUp className="w-4 h-4 text-emerald-700 shrink-0" />
               <h4 className="text-sm font-extrabold text-[#24110A]">Top Key Insights & Facts</h4>
             </div>
             <button
               onClick={() => setActiveTab('insights')}
-              className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1"
+              className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1 shrink-0"
             >
               <span>View All</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -177,7 +177,7 @@ export const OverviewTab = () => {
         </div>
 
         {/* Quick Launch Card */}
-        <div className="p-6 rounded-3xl bg-gradient-to-br from-[#FFF5EE] to-[#FFF9F5] border border-[#FAD5C0] shadow-sm flex flex-col justify-between">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#FFF5EE] to-[#FFF9F5] border border-[#FAD5C0] shadow-sm flex flex-col justify-between">
           <div>
             <div className="p-2.5 rounded-2xl bg-orange-100 text-brand-700 border border-orange-200 w-fit mb-3 shadow-sm">
               <Sparkles className="w-5 h-5" />

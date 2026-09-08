@@ -2,17 +2,63 @@ import React from 'react';
 import { useForm } from './context/FormContext';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
+import { AnalysisHome } from './components/AnalysisHome';
 import { Dashboard } from './components/Dashboard';
 import { AnalyzeModal } from './components/AnalyzeModal';
 import { MyFormsModal } from './components/MyFormsModal';
-import { GoogleConnectModal } from './components/common/GoogleConnectModal';
+import { AuthModal } from './components/common/AuthModal';
 import { LoadingOverlay } from './components/common/LoadingOverlay';
+import { Footer } from './components/Footer';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 export const App = () => {
-  const { currentForm, isLoading, loadingStep, googleStatus } = useForm();
+  const { 
+    authUser, 
+    isAuthLoading, 
+    currentForm, 
+    isLoading, 
+    loadingStep, 
+    isDemoMode,
+    setIsAuthModalOpen 
+  } = useForm();
 
-  const isConnected = Boolean(googleStatus?.is_connected);
-  const showDashboard = isConnected && Boolean(currentForm);
+  // Determine active view
+  const renderMainContent = () => {
+    // 1. If viewing an active form (either real user dataset or demo dataset)
+    if (currentForm) {
+      return (
+        <div className="space-y-4">
+          {/* Demo Banner */}
+          {isDemoMode && !authUser && (
+            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-b border-orange-200/80 py-2.5 px-4">
+              <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-[#7A4533] font-semibold">
+                  <Sparkles className="w-4 h-4 text-brand-600" />
+                  <span>Viewing Sample Demo Dataset. All numbers, charts, and grounded facts reflect live simulated survey responses.</span>
+                </div>
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#E64825] hover:bg-[#CF3C1B] text-white font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                >
+                  <span>Analyze Your Own Data</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+          <Dashboard />
+        </div>
+      );
+    }
+
+    // 2. If authenticated and on home screen
+    if (authUser) {
+      return <AnalysisHome />;
+    }
+
+    // 3. Default: Public Landing Page
+    return <LandingPage />;
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF9F6] text-[#24110A] flex flex-col font-sans selection:bg-brand-500 selection:text-white">
@@ -21,35 +67,23 @@ export const App = () => {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {showDashboard ? <Dashboard /> : <LandingPage />}
+        {isAuthLoading ? (
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+          </div>
+        ) : (
+          renderMainContent()
+        )}
       </main>
 
       {/* Modals & Loading Animations */}
+      <AuthModal />
       <AnalyzeModal />
       <MyFormsModal />
-      <GoogleConnectModal />
       {isLoading && <LoadingOverlay step={loadingStep} />}
 
-      {/* Footer */}
-      <footer className="border-t border-[#FAD5C0] py-6 text-center text-xs text-[#6B3B2B] bg-white">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
-            <span className="font-black text-[#24110A]">FormMind AI</span>
-            <span className="hidden sm:inline text-[#D4A390]">—</span>
-            <span>AI-Powered Google & MS Form Intelligence Platform</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <span className="text-[#6B3B2B] font-medium hidden lg:inline">
-              Deterministic Math Models • Zero-Hallucination Grounded Chat
-            </span>
-            <span className="hidden lg:inline text-[#D4A390]">•</span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-xs font-semibold text-[#24110A] shadow-2xs">
-              <span>Developed and maintained by</span>
-              <span className="font-black text-brand-600 tracking-tight">Alzo Tech</span>
-            </span>
-          </div>
-        </div>
-      </footer>
+      {/* Structured Footer */}
+      <Footer />
     </div>
   );
 };

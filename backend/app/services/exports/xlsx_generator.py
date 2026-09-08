@@ -5,6 +5,20 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from app.config import settings
 
+def sanitize_formula_cell(val: Any) -> Any:
+    """
+    Prevents Spreadsheet Formula Injection (CWE-1236).
+    Escapes formula triggers (=, +, -, @, \t, \r) in text cells while preserving native numbers.
+    """
+    if val is None:
+        return ""
+    if isinstance(val, (int, float, bool)):
+        return val
+    s = str(val)
+    if s and s[0] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + s
+    return s
+
 def generate_xlsx_workbook(
     form_id: str,
     form_title: str,
@@ -14,7 +28,7 @@ def generate_xlsx_workbook(
     ai_insights: Dict[str, Any]
 ) -> str:
     """
-    Generates a 5-sheet comprehensive Excel workbook.
+    Generates a 5-sheet comprehensive Excel workbook with formula-injection defenses.
     """
     filename = f"FormMind_Data_{form_id[:8]}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     file_path = os.path.join(settings.EXPORTS_DIR, filename)
@@ -95,7 +109,7 @@ def generate_xlsx_workbook(
             row_vals = [r.get("response_number", 1), ts_str]
             for q in questions:
                 val = raw_data.get(q["question_text"])
-                row_vals.append(str(val) if val is not None else "")
+                row_vals.append(sanitize_formula_cell(val))
             ws_orig.append(row_vals)
 
     # ----------------------------------------------------
@@ -121,9 +135,9 @@ def generate_xlsx_workbook(
             for q in questions:
                 val = cleaned.get(q["question_key"])
                 if isinstance(val, list):
-                    row_vals.append(", ".join(str(x) for x in val))
+                    row_vals.append(sanitize_formula_cell(", ".join(str(x) for x in val)))
                 elif val is not None:
-                    row_vals.append(val)
+                    row_vals.append(sanitize_formula_cell(val))
                 else:
                     row_vals.append("")
             ws_clean.append(row_vals)

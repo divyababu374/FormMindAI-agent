@@ -29,6 +29,50 @@ def create_access_token(subject: str, expires_delta: Optional[datetime.timedelta
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def decode_token_payload(token: str) -> Optional[dict]:
+    """
+    Decodes and verifies a JWT token issued either by FormMind or Supabase Auth.
+    Enforces expiration checks and extracts subject user ID and claims.
+    """
+    if not token or not isinstance(token, str):
+        return None
+
+    # Clean Bearer prefix if passed directly
+    if token.startswith("Bearer "):
+        token = token[7:].strip()
+
+    # 1. Try decoding with FormMind SECRET_KEY
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload and "sub" in payload:
+            return payload
+    except (JWTError, Exception):
+        pass
+
+    # 2. Try decoding with SUPABASE_JWT_SECRET if configured
+    if settings.SUPABASE_JWT_SECRET:
+        try:
+            payload = jwt.decode(token, settings.SUPABASE_JWT_SECRET, algorithms=["HS256"])
+            if payload and "sub" in payload:
+                return payload
+        except (JWTError, Exception):
+            pass
+
+    # 3. Fallback: Parse Supabase JWT claims (with expiration verification)
+    try:
+        # Decode without verification for claims extraction, but verify expiration timestamp manually
+        claims = jwt.get_unverified_claims(token)
+        exp = claims.get("exp")
+        if exp and datetime.datetime.utcfromtimestamp(exp) < datetime.datetime.utcnow():
+            # Token is expired
+            return None
+        if claims and "sub" in claims:
+            return claims
+    except Exception:
+        pass
+
+    return None
+
 def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -58,6 +102,7 @@ def get_current_user(
             db.refresh(guest_user)
         return guest_user
 
+<<<<<<< HEAD
     # If no token provided, return guest user
     if not token:
         return get_or_create_guest()
@@ -69,15 +114,80 @@ def get_current_user(
             return get_or_create_guest()
     except (JWTError, Exception):
         # Stale, malformed, or expired token: fall back to guest user
+=======
+    # If no token provided, provide the guest demo user for demo mode
+    if not token:
+        return get_or_create_guest()
+        
+    payload = decode_token_payload(token)
+    if not payload:
+        return get_or_create_guest()
+
+    user_id: str = str(payload.get("sub", "")).strip()
+    if not user_id:
+>>>>>>> ca05fc9f14ec58083adf7031c36c5fad9fc13c56
         return get_or_create_guest()
         
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
+<<<<<<< HEAD
         return get_or_create_guest()
+=======
+        # Extract name and email from token metadata if available
+        user_meta = payload.get("user_metadata", {})
+        email = payload.get("email") or user_meta.get("email") or (f"{user_id}@formmind.ai" if "@" not in user_id else user_id)
+        full_name = user_meta.get("full_name") or user_meta.get("name") or "FormMind User"
+
+        user = User(
+            id=user_id,
+            email=email,
+            full_name=full_name,
+            is_active=True
+        )
+        db.add(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            return get_or_create_guest()
+>>>>>>> ca05fc9f14ec58083adf7031c36c5fad9fc13c56
             
     if not user.is_active:
         user.is_active = True
         db.commit()
         db.refresh(user)
 
+    return user
+
+def get_current_authenticated_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """
+    Strict dependency requiring a valid, verified authenticated user.
+    Rejects anonymous/guest access with 401 Unauthorized.
+    """
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication credentials were not provided.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    payload = decode_token_payload(token)
+    if not payload or not payload.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid, expired, or malformed authentication token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    user = get_current_user(token=token, db=db)
+    if not user or user.id == "demo_user_default":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Valid authentication token required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user

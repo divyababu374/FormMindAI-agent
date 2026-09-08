@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { authService } from '../services/supabase';
 
 const FormContext = createContext();
 
 export const FormProvider = ({ children }) => {
+  // Auth state (Supabase Google Auth)
+  const [authUser, setAuthUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  // Forms and active analysis state
   const [forms, setForms] = useState([]);
   const [currentForm, setCurrentForm] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -11,6 +19,143 @@ export const FormProvider = ({ children }) => {
   const [activeTab, setActiveTabState] = useState('overview');
   const [tabHistory, setTabHistory] = useState(['overview']);
 
+  // Modals and loading state
+  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
+  const [isMyFormsModalOpen, setIsMyFormsModalOpen] = useState(false);
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [error, setError] = useState(null);
+
+  // Google status & config from backend
+  const defaultRedirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'http://localhost:5173/auth/callback';
+  const [googleConfig, setGoogleConfig] = useState({ is_configured: false, client_id: null, redirect_uri: defaultRedirectUri });
+  const [googleStatus, setGoogleStatus] = useState({ is_connected: false, email: null, name: null });
+
+  // 1. Initialize Supabase Auth & Session on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const session = await authService.getSession();
+        if (session?.user) {
+          const userObj = {
+            id: session.user.id,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Analyst',
+            email: session.user.email,
+            avatar_url: session.user.user_metadata?.avatar_url || null,
+          };
+          setAuthUser(userObj);
+          
+          // Sync with backend session
+          try {
+            await api.connectGoogleEmail(userObj.email, userObj.name);
+          } catch {
+            // backend connection fallback
+          }
+          await loadForms();
+        }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Subscribe to auth state changes
+    const { data: authListener } = authService.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const userObj = {
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Analyst',
+          email: session.user.email,
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+        };
+        setAuthUser(userObj);
+        await authService.upsertProfile(session.user);
+        try {
+          await api.connectGoogleEmail(userObj.email, userObj.name);
+        } catch {}
+        await loadForms();
+      } else if (event === 'SIGNED_OUT') {
+        setAuthUser(null);
+        setForms([]);
+        setCurrentForm(null);
+        setAnalysis(null);
+        setQuestions([]);
+      }
+    });
+
+    api.getGoogleConfig().then(setGoogleConfig).catch(() => {});
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Auth Handlers
+  const loginWithGoogle = async () => {
+    try {
+      const result = await authService.signInWithGoogle();
+      if (result?.user) {
+        const userObj = {
+          id: result.user.id,
+          name: result.user.user_metadata?.full_name || result.user.email?.split('@')[0] || 'Analyst',
+          email: result.user.email,
+          avatar_url: result.user.user_metadata?.avatar_url || null,
+        };
+        setAuthUser(userObj);
+        try {
+          await api.connectGoogleEmail(userObj.email, userObj.name);
+        } catch {}
+        await loadForms();
+      }
+      setIsAuthModalOpen(false);
+      setIsDemoMode(false);
+      return result;
+    } catch (err) {
+      console.error('Login error:', err);
+      throw err;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authService.signOut();
+      setAuthUser(null);
+      setForms([]);
+      setCurrentForm(null);
+      setAnalysis(null);
+      setQuestions([]);
+      setIsDemoMode(false);
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  };
+
+  // Demo Mode Handlers
+  const startDemoMode = async () => {
+    setIsDemoMode(true);
+    try {
+      await analyzeDemo('workshop_feedback');
+    } catch (err) {
+      console.error('Error starting demo:', err);
+    }
+  };
+
+  const exitDemoMode = () => {
+    setIsDemoMode(false);
+    setCurrentForm(null);
+    setAnalysis(null);
+    setQuestions([]);
+    setActiveTabState('overview');
+    setTabHistory(['overview']);
+  };
+
+  // Tab Navigation
   const setActiveTab = (tabOrFn) => {
     setActiveTabState((prev) => {
       const nextTab = typeof tabOrFn === 'function' ? tabOrFn(prev) : tabOrFn;
@@ -38,142 +183,19 @@ export const FormProvider = ({ children }) => {
     }
   };
 
-  const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
-  const [isMyFormsModalOpen, setIsMyFormsModalOpen] = useState(false);
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
-  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [loadingStep, setLoadingStep] = useState('');
-  const [error, setError] = useState(null);
-  const defaultRedirectUri = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'http://localhost:5173/auth/callback';
-  const [googleConfig, setGoogleConfig] = useState({ is_configured: false, client_id: null, redirect_uri: defaultRedirectUri });
-  const [googleStatus, setGoogleStatus] = useState({ is_connected: false, email: null, name: null });
-
-  // Load existing forms, Google config, and check for OAuth callback code on startup
-  useEffect(() => {
-    loadForms();
-    refreshGoogleStatus();
-    api.getGoogleConfig().then(setGoogleConfig).catch(() => {});
-
-    // Detect Google OAuth callback code in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if (code) {
-      handleOAuthCallback(code);
-    }
-  }, []);
-
-  const handleOAuthCallback = async (code) => {
-    setIsLoading(true);
-    setLoadingStep('Authenticating with Google OAuth...');
-    try {
-      await api.googleOAuthCallback(code);
-      // Clean query param from URL without reloading
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
-      await refreshGoogleStatus();
-      await loadForms();
-      setIsLoading(false);
-      setLoadingStep('');
-    } catch (err) {
-      setIsLoading(false);
-      setError(err.message || 'Google OAuth authentication failed.');
+  const resetToHome = () => {
+    setCurrentForm(null);
+    setAnalysis(null);
+    setQuestions([]);
+    setActiveTabState('overview');
+    setTabHistory(['overview']);
+    setError(null);
+    if (isDemoMode) {
+      setIsDemoMode(false);
     }
   };
 
-  const refreshGoogleStatus = async () => {
-    try {
-      const status = await api.getGoogleStatus();
-      setGoogleStatus(status);
-      return status;
-    } catch (err) {
-      console.error('Failed to get Google status:', err);
-    }
-  };
-
-  const connectGoogle = async () => {
-    try {
-      const res = await api.getGoogleAuthUrl();
-      if (res.auth_url) {
-        window.location.href = res.auth_url;
-      }
-    } catch (err) {
-      console.error('Failed to get Google Auth URL:', err);
-      throw err;
-    }
-  };
-
-  const disconnectGoogle = async () => {
-    try {
-      await api.disconnectGoogle();
-      setForms([]);
-      setCurrentForm(null);
-      setAnalysis(null);
-      setQuestions([]);
-      setActiveTabState('overview');
-      setTabHistory(['overview']);
-      await refreshGoogleStatus();
-    } catch (err) {
-      console.error('Failed to disconnect Google:', err);
-      throw err;
-    }
-  };
-
-  const connectEmail = async (email, name = null) => {
-    try {
-      // Clear all active form and forms list state from previous session
-      setForms([]);
-      setCurrentForm(null);
-      setAnalysis(null);
-      setQuestions([]);
-      setActiveTabState('overview');
-      setTabHistory(['overview']);
-
-      const res = await api.connectGoogleEmail(email, name);
-      await refreshGoogleStatus();
-      await loadForms();
-      return res;
-    } catch (err) {
-      console.error('Failed to connect email:', err);
-      throw err;
-    }
-  };
-
-  const connectDirectToken = async (token) => {
-    try {
-      setForms([]);
-      setCurrentForm(null);
-      setAnalysis(null);
-      setQuestions([]);
-      setActiveTabState('overview');
-      setTabHistory(['overview']);
-
-      const res = await api.setGoogleDirectToken(token);
-      await refreshGoogleStatus();
-      await loadForms();
-      return res;
-    } catch (err) {
-      console.error('Failed to set direct token:', err);
-      throw err;
-    }
-  };
-
-  const updateGoogleConfig = async (clientId, clientSecret, redirectUri) => {
-    try {
-      const res = await api.updateGoogleConfig(clientId, clientSecret, redirectUri);
-      setGoogleConfig({
-        is_configured: res.is_configured,
-        client_id: res.client_id,
-        redirect_uri: res.redirect_uri
-      });
-      return res;
-    } catch (err) {
-      console.error('Failed to update Google config:', err);
-      throw err;
-    }
-  };
-
+  // Forms & Analysis API calls
   const loadForms = async () => {
     try {
       const data = await api.getForms();
@@ -208,10 +230,7 @@ export const FormProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     const steps = [
-      "Connecting to Google Form...",
-      "Resolving Form ID with connected Gmail...",
-      "Retrieving respondent submissions...",
-      "Processing questions & schema...",
+      "Reading survey responses...",
       "Cleaning data & standardizing types...",
       "Calculating deterministic statistics...",
       "Generating AI insights & narratives...",
@@ -237,12 +256,12 @@ export const FormProvider = ({ children }) => {
         setIsLoading(false);
         setIsAnalyzeModalOpen(false);
         setActiveTab('overview');
-      }, 500);
+      }, 400);
       return newForm;
     } catch (err) {
       clearInterval(interval);
       setIsLoading(false);
-      setError(err.message || 'Analysis failed. Please check form link or permissions.');
+      setError(err.message || 'Analysis failed. Please check form link or file format.');
       throw err;
     }
   };
@@ -286,7 +305,7 @@ export const FormProvider = ({ children }) => {
     if (!currentForm) return;
     try {
       setIsLoading(true);
-      setLoadingStep('Syncing latest responses from Google...');
+      setLoadingStep('Syncing latest responses...');
       await api.syncFormResponses(currentForm.id);
       await selectForm(currentForm.id);
       setIsLoading(false);
@@ -315,18 +334,18 @@ export const FormProvider = ({ children }) => {
     });
   };
 
-  const resetToHome = () => {
-    setCurrentForm(null);
-    setAnalysis(null);
-    setQuestions([]);
-    setActiveTabState('overview');
-    setTabHistory(['overview']);
-    setError(null);
-  };
-
   return (
     <FormContext.Provider
       value={{
+        authUser,
+        isAuthLoading,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        isDemoMode,
+        startDemoMode,
+        exitDemoMode,
+        loginWithGoogle,
+        logout,
         forms,
         currentForm,
         questions,
@@ -339,8 +358,6 @@ export const FormProvider = ({ children }) => {
         setIsAnalyzeModalOpen,
         isMyFormsModalOpen,
         setIsMyFormsModalOpen,
-        isGoogleModalOpen,
-        setIsGoogleModalOpen,
         isAttachModalOpen,
         setIsAttachModalOpen,
         isLoading,
@@ -349,12 +366,6 @@ export const FormProvider = ({ children }) => {
         setError,
         googleConfig,
         googleStatus,
-        refreshGoogleStatus,
-        connectEmail,
-        connectGoogle,
-        disconnectGoogle,
-        connectDirectToken,
-        updateGoogleConfig,
         loadForms,
         selectForm,
         resetToHome,
@@ -370,7 +381,6 @@ export const FormProvider = ({ children }) => {
       {children}
     </FormContext.Provider>
   );
-
 };
 
 export const useForm = () => useContext(FormContext);

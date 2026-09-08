@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=sqlite:///./formmind.db
+      - SECRET_KEY=dev-secret-key-formmind-ai-2026
+    volumes:
+      - ./uploads:/app/uploads
+      - ./exports:/app/exports
+      - ./formmind.db:/app/formmind.db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

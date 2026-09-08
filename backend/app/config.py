@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "formmind-ai-super-secret-production-key-change-in-prod-2026")
+    SUPABASE_JWT_SECRET: Optional[str] = os.getenv("SUPABASE_JWT_SECRET", "")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     

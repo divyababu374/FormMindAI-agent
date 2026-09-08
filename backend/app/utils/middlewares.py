@@ -40,10 +40,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
         
+        # Sensitive Authenticated Response Cache Protection
+        if any(request.url.path.startswith(prefix) for prefix in ("/api/forms", "/api/chat", "/api/auth")):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+
         # HSTS only in production
         if settings.ENVIRONMENT == "production":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
             
         return response
 
@@ -56,14 +62,14 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
     def _cleanup_old_records(self, now: float):
         if now - self.last_cleanup > 60:
-            for ip in list(self.request_records.keys()):
-                self.request_records[ip] = [t for t in self.request_records[ip] if now - t < 60]
-                if not self.request_records[ip]:
-                    del self.request_records[ip]
+            for key in list(self.request_records.keys()):
+                self.request_records[key] = [t for t in self.request_records[key] if now - t < 60]
+                if not self.request_records[key]:
+                    del self.request_records[key]
             self.last_cleanup = now
 
     async def dispatch(self, request: Request, call_next):
-        # Exclude health check and docs from rate limits
+        # Exclude health check, openapi, and static docs from rate limits
         path = request.url.path
         if path in ("/", "/health", "/health/live", "/health/ready", "/api/health", "/docs", "/redoc", "/openapi.json"):
             return await call_next(request)
@@ -78,30 +84,41 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         if settings.ENVIRONMENT == "testing" or client_ip == "testclient":
             return await call_next(request)
 
+        # Incorporate bearer token identifier if present to enforce per-user rate bounds
+        auth_header = request.headers.get("authorization", "")
+        rate_key = client_ip
+        if auth_header and len(auth_header) > 15:
+            # Use last 12 chars of token + IP
+            rate_key = f"{client_ip}:{auth_header[-12:]}"
+
         now = time.time()
         self._cleanup_old_records(now)
 
-        timestamps = self.request_records[client_ip]
+        timestamps = self.request_records[rate_key]
         recent_timestamps = [t for t in timestamps if now - t < 60]
-        self.request_records[client_ip] = recent_timestamps
+        self.request_records[rate_key] = recent_timestamps
 
-        # Determine limit for path
-        is_auth = "/auth/" in path
-        limit = settings.RATE_LIMIT_AUTH_PER_MINUTE if is_auth else settings.RATE_LIMIT_PER_MINUTE
+        # Determine limit for path (stricter limits for AI chat, reports, and auth)
+        if "/chat" in path or "/report" in path or "/image" in path:
+            limit = 60  # AI and heavy export requests
+        elif "/auth/" in path:
+            limit = settings.RATE_LIMIT_AUTH_PER_MINUTE
+        else:
+            limit = settings.RATE_LIMIT_PER_MINUTE
 
         if len(recent_timestamps) >= limit:
-            logger.warning(f"Rate limit exceeded for IP {client_ip} on {path} ({len(recent_timestamps)} requests/min)")
+            logger.warning(f"Rate limit exceeded for {rate_key} on {path} ({len(recent_timestamps)} requests/min)")
             return JSONResponse(
                 status_code=429,
                 content={
                     "error": "Too Many Requests",
-                    "detail": f"Rate limit of {limit} requests per minute exceeded. Please try again later.",
+                    "detail": f"Rate limit of {limit} requests per minute exceeded. Please try again in a moment.",
                     "retry_after_seconds": 30
                 },
                 headers={"Retry-After": "30"}
             )
 
-        self.request_records[client_ip].append(now)
+        self.request_records[rate_key].append(now)
         return await call_next(request)
 
 

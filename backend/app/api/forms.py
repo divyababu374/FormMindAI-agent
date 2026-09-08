@@ -230,6 +230,12 @@ def analyze_form(req: FormAnalyzeRequest, db: Session = Depends(get_db), current
     """
     Ingests and analyzes a Google Form URL, Microsoft Forms URL, Google Sheet URL, or Demo Dataset.
     """
+    if not current_user or current_user.id == "demo_user_default":
+        raise HTTPException(
+            status_code=401,
+            detail="Please connect your email or Google account to analyze forms."
+        )
+
     # Demo dataset option
     if req.demo_type:
         if req.demo_type in ("ms_employee_feedback", "microsoft_form_demo", "ms_form"):
@@ -287,6 +293,12 @@ async def upload_form_file(
     """
     Upload CSV or Excel file containing form responses.
     """
+    if not current_user or current_user.id == "demo_user_default":
+        raise HTTPException(
+            status_code=401,
+            detail="Please connect your email or Google account to upload and analyze forms."
+        )
+
     try:
         contents = await file.read()
         dataset = import_file_to_dataset(contents, file.filename)
@@ -298,34 +310,31 @@ async def upload_form_file(
         raise HTTPException(status_code=400, detail=f"Failed to parse uploaded dataset: {str(e)}")
 
 def _get_form_for_user(form_id: str, current_user: User, db: Session) -> Optional[Form]:
-    if current_user and current_user.id != "demo_user_default":
-        return db.query(Form).filter(
-            Form.id == form_id,
-            Form.user_id == current_user.id
-        ).first()
-    else:
-        return db.query(Form).filter(
-            Form.id == form_id,
-            Form.user_id == "demo_user_default"
-        ).first()
+    if not current_user or current_user.id == "demo_user_default":
+        return None
+    return db.query(Form).filter(
+        Form.id == form_id,
+        Form.user_id == current_user.id
+    ).first()
 
 @router.get("", response_model=List[FormSummaryResponse])
 def get_user_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Lists all forms belonging to the current user.
     """
-    if current_user and current_user.id != "demo_user_default":
-        forms = db.query(Form).filter(Form.user_id == current_user.id).order_by(Form.created_at.desc()).all()
-        return forms
-    else:
-        forms = db.query(Form).filter(Form.user_id == "demo_user_default").order_by(Form.created_at.desc()).all()
-        return forms
+    if not current_user or current_user.id == "demo_user_default":
+        return []
+    forms = db.query(Form).filter(Form.user_id == current_user.id).order_by(Form.created_at.desc()).all()
+    return forms
 
 @router.get("/google/drive-forms")
 def get_user_google_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Lists Google Forms from the connected user's Google Drive and persists them to the database.
     """
+    if not current_user or current_user.id == "demo_user_default":
+        return []
+
     token = get_valid_google_token(current_user, db) if current_user.is_google_connected else current_user.google_access_token
     if not token:
         conn_acc = db.query(ConnectedAccount).filter(

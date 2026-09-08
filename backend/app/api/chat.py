@@ -14,13 +14,9 @@ from app.services.chat.grounded_chat import GroundedChatEngine
 router = APIRouter(prefix="/forms/{form_id}/chat", tags=["AI Chat"])
 
 def _get_form_for_chat(form_id: str, current_user: User, db: Session) -> Form:
-    if current_user.id != "demo_user_default":
-        conds = [Form.user_id == current_user.id]
-        if current_user.email:
-            conds.append(Form.connected_email == current_user.email)
-        form = db.query(Form).filter(Form.id == form_id, or_(*conds)).first()
-    else:
-        form = db.query(Form).filter(Form.id == form_id, Form.user_id == "demo_user_default").first()
+    if not current_user or current_user.id == "demo_user_default":
+        raise HTTPException(status_code=404, detail="Form not found.")
+    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
     if not form:
         raise HTTPException(status_code=404, detail="Form not found.")
     return form

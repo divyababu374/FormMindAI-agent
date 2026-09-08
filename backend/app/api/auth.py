@@ -142,7 +142,10 @@ def _persist_connected_email_and_forms(
     name_clean = name or email_clean.split("@")[0].replace(".", " ").title()
 
     # 1. Resolve or create user account in database specifically for this email
-    existing_user = db.query(User).filter(User.email == email_clean).first()
+    existing_user = db.query(User).filter(
+        User.email == email_clean,
+        User.id != "demo_user_default"
+    ).first()
     if existing_user:
         target_user = existing_user
         target_user.full_name = name_clean or target_user.full_name
@@ -265,6 +268,18 @@ def get_google_status(db: Session = Depends(get_db), current_user: User = Depend
     """
     Returns current Google connection state including connected email, name, and connected forms count from database.
     """
+    if not current_user or current_user.id == "demo_user_default":
+        return {
+            "is_connected": False,
+            "email": None,
+            "name": None,
+            "connected_at": None,
+            "connected_forms_count": 0,
+            "drive_forms_saved_count": 0,
+            "is_oauth_configured": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET),
+            "client_id": settings.GOOGLE_CLIENT_ID if settings.GOOGLE_CLIENT_ID else None
+        }
+
     conn_acc = db.query(ConnectedAccount).filter(
         ConnectedAccount.user_id == current_user.id,
         ConnectedAccount.provider == "google",
@@ -276,10 +291,7 @@ def get_google_status(db: Session = Depends(get_db), current_user: User = Depend
     is_connected = bool(current_user.is_google_connected or conn_acc)
 
     # Count connected forms saved in database strictly for this user
-    if current_user.id != "demo_user_default":
-        forms_count = db.query(Form).filter(Form.user_id == current_user.id).count()
-    else:
-        forms_count = db.query(Form).filter(Form.user_id == "demo_user_default").count()
+    forms_count = db.query(Form).filter(Form.user_id == current_user.id).count()
 
     drive_forms_count = db.query(ConnectedDriveForm).filter(
         ConnectedDriveForm.user_id == current_user.id

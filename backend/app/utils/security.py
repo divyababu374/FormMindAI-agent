@@ -40,44 +40,40 @@ def get_current_user(
         if not guest_user:
             guest_user = User(
                 id="demo_user_default",
-                email="demo@formmind.ai",
-                full_name="FormMind Explorer",
-                is_active=True
+                email="guest@formmind.ai",
+                full_name="Guest User",
+                is_active=True,
+                is_google_connected=False
             )
             db.add(guest_user)
             db.commit()
             db.refresh(guest_user)
+        elif guest_user.is_google_connected or guest_user.email != "guest@formmind.ai":
+            guest_user.email = "guest@formmind.ai"
+            guest_user.full_name = "Guest User"
+            guest_user.is_google_connected = False
+            guest_user.google_access_token = None
+            guest_user.google_refresh_token = None
+            db.commit()
+            db.refresh(guest_user)
         return guest_user
 
-    # If no token provided, we provide a persistent default/guest demo user
+    # If no token provided, return guest user
     if not token:
         return get_or_create_guest()
         
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")
-        if not user_id:
+        if not user_id or user_id == "demo_user_default":
             return get_or_create_guest()
     except (JWTError, Exception):
-        # Stale, malformed, or expired token: fall back gracefully to guest user
+        # Stale, malformed, or expired token: fall back to guest user
         return get_or_create_guest()
         
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        # Auto-heal: If user record was wiped or db re-initialized, re-create user seamlessly
-        user = User(
-            id=user_id,
-            email=f"{user_id}@formmind.ai" if "@" not in user_id else user_id,
-            full_name="FormMind Explorer",
-            is_active=True
-        )
-        db.add(user)
-        try:
-            db.commit()
-            db.refresh(user)
-        except Exception:
-            db.rollback()
-            return get_or_create_guest()
+        return get_or_create_guest()
             
     if not user.is_active:
         user.is_active = True

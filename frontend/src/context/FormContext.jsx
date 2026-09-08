@@ -90,12 +90,14 @@ export const FormProvider = ({ children }) => {
 
   const connectEmail = async (email, name = null) => {
     try {
+      // Clear active form state from any previous session
+      setCurrentForm(null);
+      setAnalysis(null);
+      setQuestions([]);
+
       const res = await api.connectGoogleEmail(email, name);
-      const st = await refreshGoogleStatus();
-      const loadedForms = await loadForms();
-      if (loadedForms && loadedForms.length > 0 && !currentForm) {
-        selectForm(loadedForms[0].id);
-      }
+      await refreshGoogleStatus();
+      await loadForms();
       return res;
     } catch (err) {
       console.error('Failed to connect email:', err);
@@ -105,12 +107,13 @@ export const FormProvider = ({ children }) => {
 
   const connectDirectToken = async (token) => {
     try {
+      setCurrentForm(null);
+      setAnalysis(null);
+      setQuestions([]);
+
       const res = await api.setGoogleDirectToken(token);
       await refreshGoogleStatus();
-      const loadedForms = await loadForms();
-      if (loadedForms && loadedForms.length > 0 && !currentForm) {
-        selectForm(loadedForms[0].id);
-      }
+      await loadForms();
       return res;
     } catch (err) {
       console.error('Failed to set direct token:', err);

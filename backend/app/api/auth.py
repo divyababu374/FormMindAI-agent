@@ -196,13 +196,10 @@ def _persist_connected_email_and_forms(
         conn_acc.is_active = True
         conn_acc.updated_at = datetime.datetime.utcnow()
 
-    # 3. Associate all existing session forms in database to this connected user and email
-    forms_to_migrate = db.query(Form).filter(
-        or_(Form.user_id == "demo_user_default", Form.user_id == current_user.id)
-    ).all()
-    for f in forms_to_migrate:
-        f.user_id = target_user.id
-        f.connected_email = email_clean
+    # 3. Count forms belonging specifically to this target user and email
+    user_forms_count = db.query(Form).filter(
+        or_(Form.user_id == target_user.id, Form.connected_email == email_clean)
+    ).count()
 
     # 4. If access_token provided, discover and save Google Drive forms into database
     if access_token:
@@ -231,7 +228,7 @@ def _persist_connected_email_and_forms(
 
     db.commit()
     db.refresh(target_user)
-    return target_user, conn_acc, len(forms_to_migrate)
+    return target_user, conn_acc, user_forms_count
 
 from pydantic import BaseModel, EmailStr
 
@@ -282,14 +279,14 @@ def get_google_status(db: Session = Depends(get_db), current_user: User = Depend
     connected_name = conn_acc.name if conn_acc else (current_user.full_name if current_user.is_google_connected else None)
     is_connected = bool(current_user.is_google_connected or conn_acc)
 
-    # Count connected forms saved in database
-    forms_count = db.query(Form).filter(
-        or_(
-            Form.user_id == current_user.id,
-            Form.connected_email == connected_email,
-            Form.user_id == "demo_user_default"
-        )
-    ).count()
+    # Count connected forms saved in database for this user
+    if current_user.id != "demo_user_default":
+        conditions = [Form.user_id == current_user.id]
+        if connected_email:
+            conditions.append(Form.connected_email == connected_email)
+        forms_count = db.query(Form).filter(or_(*conditions)).count()
+    else:
+        forms_count = db.query(Form).filter(Form.user_id == "demo_user_default").count()
 
     drive_forms_count = db.query(ConnectedDriveForm).filter(
         ConnectedDriveForm.user_id == current_user.id

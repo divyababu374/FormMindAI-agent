@@ -298,11 +298,10 @@ async def upload_form_file(
         raise HTTPException(status_code=400, detail=f"Failed to parse uploaded dataset: {str(e)}")
 
 def _get_form_for_user(form_id: str, current_user: User, db: Session) -> Optional[Form]:
-    connected_emails = []
-    if current_user and current_user.email:
-        connected_emails.append(current_user.email.strip().lower())
-
-    if current_user:
+    if current_user and current_user.id != "demo_user_default":
+        connected_emails = []
+        if current_user.email:
+            connected_emails.append(current_user.email.strip().lower())
         conn_accs = db.query(ConnectedAccount).filter(
             ConnectedAccount.user_id == current_user.id,
             ConnectedAccount.is_active == True
@@ -311,29 +310,29 @@ def _get_form_for_user(form_id: str, current_user: User, db: Session) -> Optiona
             if acc.email and acc.email.strip().lower() not in connected_emails:
                 connected_emails.append(acc.email.strip().lower())
 
-    user_id_val = current_user.id if current_user else "demo_user_default"
-    conditions = [
-        Form.user_id == user_id_val,
-        Form.user_id == "demo_user_default"
-    ]
-    if connected_emails:
-        conditions.append(Form.connected_email.in_(connected_emails))
+        conditions = [Form.user_id == current_user.id]
+        if connected_emails:
+            conditions.append(Form.connected_email.in_(connected_emails))
 
-    return db.query(Form).filter(
-        Form.id == form_id,
-        or_(*conditions)
-    ).first()
+        return db.query(Form).filter(
+            Form.id == form_id,
+            or_(*conditions)
+        ).first()
+    else:
+        return db.query(Form).filter(
+            Form.id == form_id,
+            Form.user_id == "demo_user_default"
+        ).first()
 
 @router.get("", response_model=List[FormSummaryResponse])
 def get_user_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
     Lists all forms belonging to the current user or their connected email.
     """
-    connected_emails = []
-    if current_user and current_user.email:
-        connected_emails.append(current_user.email.strip().lower())
-
-    if current_user:
+    if current_user and current_user.id != "demo_user_default":
+        connected_emails = []
+        if current_user.email:
+            connected_emails.append(current_user.email.strip().lower())
         conn_accs = db.query(ConnectedAccount).filter(
             ConnectedAccount.user_id == current_user.id,
             ConnectedAccount.is_active == True
@@ -342,16 +341,15 @@ def get_user_forms(db: Session = Depends(get_db), current_user: User = Depends(g
             if acc.email and acc.email.strip().lower() not in connected_emails:
                 connected_emails.append(acc.email.strip().lower())
 
-    user_id_val = current_user.id if current_user else "demo_user_default"
-    conditions = [
-        Form.user_id == user_id_val,
-        Form.user_id == "demo_user_default"
-    ]
-    if connected_emails:
-        conditions.append(Form.connected_email.in_(connected_emails))
+        conditions = [Form.user_id == current_user.id]
+        if connected_emails:
+            conditions.append(Form.connected_email.in_(connected_emails))
 
-    forms = db.query(Form).filter(or_(*conditions)).order_by(Form.created_at.desc()).all()
-    return forms
+        forms = db.query(Form).filter(or_(*conditions)).order_by(Form.created_at.desc()).all()
+        return forms
+    else:
+        forms = db.query(Form).filter(Form.user_id == "demo_user_default").order_by(Form.created_at.desc()).all()
+        return forms
 
 @router.get("/google/drive-forms")
 def get_user_google_forms(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

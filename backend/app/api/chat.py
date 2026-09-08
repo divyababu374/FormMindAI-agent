@@ -13,6 +13,18 @@ from app.services.chat.grounded_chat import GroundedChatEngine
 
 router = APIRouter(prefix="/forms/{form_id}/chat", tags=["AI Chat"])
 
+def _get_form_for_chat(form_id: str, current_user: User, db: Session) -> Form:
+    if current_user.id != "demo_user_default":
+        conds = [Form.user_id == current_user.id]
+        if current_user.email:
+            conds.append(Form.connected_email == current_user.email)
+        form = db.query(Form).filter(Form.id == form_id, or_(*conds)).first()
+    else:
+        form = db.query(Form).filter(Form.id == form_id, Form.user_id == "demo_user_default").first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Form not found.")
+    return form
+
 @router.post("", response_model=ChatMessageResponse)
 def send_chat_message(
     form_id: str,
@@ -20,9 +32,7 @@ def send_chat_message(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    form = db.query(Form).filter(Form.id == form_id, or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default", Form.connected_email == current_user.email)).first()
-    if not form:
-        raise HTTPException(status_code=404, detail="Form not found.")
+    form = _get_form_for_chat(form_id, current_user, db)
 
     # Retrieve or create session
     session = db.query(ChatSession).filter(ChatSession.form_id == form_id).first()
@@ -75,23 +85,39 @@ def send_chat_message(
             "comparative_analysis": form.analysis.comparative_analysis or [],
             "ai_insights": form.analysis.ai_insights or {}
         }
+    responses = [r.cleaned_data for r in form.responses if r.cleaned_data]
+    analysis = db.query(FormAnalysis).filter(FormAnalysis.form_id == form_id).first()
+    analysis_dict = {
+        "basic_statistics": analysis.basic_statistics if analysis else {},
+        "numerical_analysis": analysis.numerical_analysis if analysis else {},
+        "categorical_analysis": analysis.categorical_analysis if analysis else {},
+        "text_analysis": analysis.text_analysis if analysis else {},
+        "comparative_analysis": analysis.comparative_analysis if analysis else [],
+        "ai_insights": analysis.ai_insights if analysis else {}
+    }
 
-    # Retrieve past messages
-    history_records = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()).all()
-    chat_history = [{"role": m.role, "content": m.content} for m in history_records[-10:]]
+    # Load recent message history
+    recent_msgs = db.query(ChatMessage).filter(
+        ChatMessage.session_id == session.id
+    ).order_by(ChatMessage.created_at.asc()).limit(15).all()
 
-    # Run Grounded Chat
+    chat_history = [
+        {"role": m.role, "content": m.content}
+        for m in recent_msgs
+    ]
+
+    # Generate AI answer with grounding
     ai_result = GroundedChatEngine.process_query(
         user_message=msg_in.content,
         form=form,
         questions=questions,
         responses=responses,
-        analysis_data=analysis_data,
+        analysis_data=analysis_dict,
         chat_history=chat_history
     )
 
-    # Save Assistant Response
-    assistant_msg = ChatMessage(
+    # Save assistant message
+    asst_msg = ChatMessage(
         id=str(uuid.uuid4()),
         session_id=session.id,
         role="assistant",
@@ -101,11 +127,11 @@ def send_chat_message(
         intent_detected=ai_result.get("intent_detected"),
         file_attachment=ai_result.get("file_attachment")
     )
-    db.add(assistant_msg)
+    db.add(asst_msg)
     db.commit()
-    db.refresh(assistant_msg)
+    db.refresh(asst_msg)
 
-    return assistant_msg
+    return asst_msg
 
 @router.get("/history", response_model=ChatSessionResponse)
 def get_chat_history(
@@ -113,9 +139,7 @@ def get_chat_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    form = db.query(Form).filter(Form.id == form_id, or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default", Form.connected_email == current_user.email)).first()
-    if not form:
-        raise HTTPException(status_code=404, detail="Form not found.")
+    form = _get_form_for_chat(form_id, current_user, db)
 
     session = db.query(ChatSession).filter(ChatSession.form_id == form_id).first()
     if not session:
@@ -132,9 +156,7 @@ def clear_chat_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    form = db.query(Form).filter(Form.id == form_id, or_(Form.user_id == current_user.id, Form.user_id == "demo_user_default", Form.connected_email == current_user.email)).first()
-    if not form:
-        raise HTTPException(status_code=404, detail="Form not found.")
+    form = _get_form_for_chat(form_id, current_user, db)
 
     session = db.query(ChatSession).filter(ChatSession.form_id == form_id).first()
     if session:

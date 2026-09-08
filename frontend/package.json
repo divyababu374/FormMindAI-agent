@@ -9,15 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "canvas-confetti": "^1.9.2",
+    "chart.js": "^4.4.2",
     "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.1",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "chart.js": "^4.4.2",
     "react-chartjs-2": "^5.2.0",
-    "html2canvas": "^1.4.1",
-    "canvas-confetti": "^1.9.2"
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

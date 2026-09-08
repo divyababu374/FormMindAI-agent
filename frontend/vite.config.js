@@ -14,5 +14,18 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'charts-vendor': ['chart.js', 'react-chartjs-2'],
+          'icons-vendor': ['lucide-react'],
+          'utils-vendor': ['clsx', 'tailwind-merge', 'html2canvas', 'canvas-confetti', '@supabase/supabase-js']
+        }
+      }
+    }
   }
 })

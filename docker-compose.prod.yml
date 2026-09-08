@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: formmind-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: formmind
+      POSTGRES_USER: formmind
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-formmind_secure_prod_pass_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U formmind -d formmind"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: formmind-backend
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - DATABASE_URL=postgresql://formmind:${POSTGRES_PASSWORD:-formmind_secure_prod_pass_2026}@db:5432/formmind
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production-to-a-secure-secret-key}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://form-mind-ai-agent.vercel.app}
+      - AI_PROVIDER=${AI_PROVIDER:-auto}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-}
+    volumes:
+      - uploads_data:/app/uploads
+      - exports_data:/app/exports
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: formmind-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  uploads_data:
+  exports_data:

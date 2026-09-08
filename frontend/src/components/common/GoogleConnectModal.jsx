@@ -99,44 +99,54 @@ export const GoogleConnectModal = () => {
           
           {/* Status Section if Connected */}
           {googleStatus?.is_connected ? (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-black text-emerald-950">
-                      Connected: <span className="text-emerald-700">{googleStatus.email}</span>
-                    </h4>
-                    <p className="text-xs text-emerald-800 font-medium">
-                      FormMind AI is linked with your Gmail ID. Provide your Google Form link to generate full reports!
+            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-300 space-y-3.5 shadow-sm">
+              
+              {/* Account Header & Disconnect Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-200">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] sm:text-[11px] font-extrabold text-emerald-800 uppercase tracking-wider">
+                      Connected Gmail ID
+                    </p>
+                    <p className="text-xs sm:text-sm font-black text-emerald-950 truncate" title={googleStatus.email}>
+                      {googleStatus.email}
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleDisconnect}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-[#FAD5C0] hover:border-rose-400 text-[#3B1F14] hover:text-rose-700 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 hover:border-rose-400 text-rose-700 hover:text-rose-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 shrink-0 cursor-pointer"
+                  title="Disconnect this Gmail account"
                 >
-                  <Unlink className="w-3.5 h-3.5" />
+                  <Unlink className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                   <span>Disconnect</span>
                 </button>
               </div>
 
+              <p className="text-[11px] sm:text-xs text-emerald-800 font-medium leading-relaxed">
+                FormMind AI is active with your Gmail ID. Provide any Google Form or Microsoft Forms link to generate comprehensive analytics and reports!
+              </p>
+
               {/* Ready badges */}
-              <div className="pt-2 border-t border-emerald-200 grid grid-cols-2 gap-2 text-[11px] text-emerald-900 font-semibold">
+              <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-emerald-900 font-semibold">
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Google Form Ingestion</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Automatic Response Analysis</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>PDF / Word DOCX Exports</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Excel XLSX / CSV Reports</span>
                 </div>
               </div>

@@ -19,7 +19,8 @@ import {
   Lock,
   ExternalLink,
   AlertCircle,
-  FolderKanban
+  FolderKanban,
+  Unlink
 } from 'lucide-react';
 import { Badge } from './common/Badge';
 import confetti from 'canvas-confetti';
@@ -28,6 +29,7 @@ export const LandingPage = () => {
   const { 
     googleStatus, 
     connectEmail, 
+    disconnectGoogle,
     analyzeUrl, 
     analyzeDemo, 
     forms,
@@ -262,27 +264,37 @@ export const LandingPage = () => {
             /* UNLOCKED WORKSPACE: URL ANALYZER & DEMO SURVEYS */
             <div className="space-y-4">
               {/* Connected Banner */}
-              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-3 text-left">
-                <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left shadow-sm">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-black text-emerald-950 truncate">
-                      Connected as {googleStatus?.email}
+                      Connected as <span className="underline decoration-emerald-400 font-extrabold">{googleStatus?.email}</span>
                     </p>
                     <p className="text-[11px] text-emerald-800 font-medium">
                       All survey analysis features are unlocked for your account.
                     </p>
                   </div>
                 </div>
-                {forms.length > 0 && (
+                <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-end flex-wrap">
+                  {forms.length > 0 && (
+                    <button
+                      onClick={() => selectForm(forms[0].id)}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-colors shrink-0 shadow-sm flex items-center gap-1 cursor-pointer"
+                    >
+                      <FolderKanban className="w-3.5 h-3.5" />
+                      <span>Open Form</span>
+                    </button>
+                  )}
                   <button
-                    onClick={() => selectForm(forms[0].id)}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-colors shrink-0 shadow-sm flex items-center gap-1"
+                    onClick={disconnectGoogle}
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 hover:border-rose-400 text-rose-700 hover:text-rose-800 text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer shrink-0 active:scale-95"
+                    title="Disconnect this account"
                   >
-                    <FolderKanban className="w-3.5 h-3.5" />
-                    <span>Open Form</span>
+                    <Unlink className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>Disconnect</span>
                   </button>
-                )}
+                </div>
               </div>
 
               {/* Form URL Input */}

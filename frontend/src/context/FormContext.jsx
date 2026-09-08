@@ -78,6 +78,9 @@ export const FormProvider = ({ children }) => {
   const disconnectGoogle = async () => {
     try {
       await api.disconnectGoogle();
+      setCurrentForm(null);
+      setAnalysis(null);
+      setQuestions([]);
       await refreshGoogleStatus();
     } catch (err) {
       console.error('Failed to disconnect Google:', err);
@@ -88,8 +91,11 @@ export const FormProvider = ({ children }) => {
   const connectEmail = async (email, name = null) => {
     try {
       const res = await api.connectGoogleEmail(email, name);
-      await refreshGoogleStatus();
-      await loadForms();
+      const st = await refreshGoogleStatus();
+      const loadedForms = await loadForms();
+      if (loadedForms && loadedForms.length > 0 && !currentForm) {
+        selectForm(loadedForms[0].id);
+      }
       return res;
     } catch (err) {
       console.error('Failed to connect email:', err);
@@ -101,7 +107,10 @@ export const FormProvider = ({ children }) => {
     try {
       const res = await api.setGoogleDirectToken(token);
       await refreshGoogleStatus();
-      await loadForms();
+      const loadedForms = await loadForms();
+      if (loadedForms && loadedForms.length > 0 && !currentForm) {
+        selectForm(loadedForms[0].id);
+      }
       return res;
     } catch (err) {
       console.error('Failed to set direct token:', err);
@@ -128,11 +137,10 @@ export const FormProvider = ({ children }) => {
     try {
       const data = await api.getForms();
       setForms(data);
-      if (data.length > 0 && !currentForm) {
-        selectForm(data[0].id);
-      }
+      return data;
     } catch (err) {
       console.error('Failed to load forms:', err);
+      return [];
     }
   };
 

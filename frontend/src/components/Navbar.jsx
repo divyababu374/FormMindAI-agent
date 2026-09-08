@@ -5,10 +5,11 @@ import {
   PlusCircle, 
   FolderKanban, 
   ChevronDown, 
-  Menu,
-  X,
-  CheckCircle2,
-  Layers
+  Menu, 
+  X, 
+  CheckCircle2, 
+  Layers,
+  Mail
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -24,6 +25,7 @@ export const Navbar = () => {
   } = useForm();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isConnected = Boolean(googleStatus?.is_connected);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#FAD5C0] bg-white/95 backdrop-blur-lg shadow-sm">
@@ -52,8 +54,8 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Desktop Form Switcher Dropdown */}
-          {forms.length > 0 && currentForm && (
+          {/* Desktop Form Switcher Dropdown (Only when connected & forms exist) */}
+          {isConnected && forms.length > 0 && currentForm && (
             <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-[#FAD5C0]">
               <span className="text-xs text-[#6B3B2B] font-bold shrink-0">Active Form:</span>
               <div className="relative group">
@@ -76,60 +78,78 @@ export const Navbar = () => {
 
         {/* Right Desktop Actions (md and up) */}
         <div className="hidden md:flex items-center gap-2.5 lg:gap-3">
-          {/* Google Account Connection Button */}
-          <button
-            onClick={() => setIsGoogleModalOpen(true)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${
-              googleStatus?.is_connected
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
-                : 'bg-white border-[#FAD5C0] text-[#24110A] hover:border-brand-500 hover:bg-[#FFF2EB]'
-            }`}
-            title={googleStatus?.is_connected ? `Connected as ${googleStatus.email}` : "Connect Gmail ID to access private responses"}
-          >
-            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-            </svg>
-            <span className="truncate max-w-[120px] lg:max-w-[170px]">
-              {googleStatus?.is_connected ? (googleStatus.email || "Google Connected") : "Connect Gmail ID"}
-            </span>
-            <span className={`w-2 h-2 rounded-full shrink-0 ${googleStatus?.is_connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-          </button>
-
-          {/* My Forms Button */}
-          {forms.length > 0 && (
+          {!isConnected ? (
+            /* Connect CTA button when not connected */
             <button
-              onClick={() => setIsMyFormsModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#FAD5C0] hover:bg-[#FFF2EB] text-[#24110A] text-xs font-bold transition-colors shadow-sm"
+              onClick={() => setIsGoogleModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-black shadow-md shadow-brand-500/25 transition-all active:scale-95 shrink-0"
             >
-              <FolderKanban className="w-4 h-4 text-brand-600 shrink-0" />
-              <span className="truncate">My Forms ({forms.length})</span>
+              <Mail className="w-3.5 h-3.5" />
+              <span>Connect Gmail (1-Click)</span>
             </button>
-          )}
+          ) : (
+            <>
+              {/* Google Account Connection Button */}
+              <button
+                onClick={() => setIsGoogleModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100"
+                title={`Connected as ${googleStatus.email}`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                <span className="truncate max-w-[120px] lg:max-w-[170px]">
+                  {googleStatus.email || "Google Connected"}
+                </span>
+                <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-500 animate-pulse" />
+              </button>
 
-          {/* Analyze New Form Button */}
-          <button
-            onClick={() => setIsAnalyzeModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all active:scale-95 shrink-0"
-          >
-            <PlusCircle className="w-4 h-4 shrink-0" />
-            <span>Analyze Form</span>
-          </button>
+              {/* My Forms Button */}
+              {forms.length > 0 && (
+                <button
+                  onClick={() => setIsMyFormsModalOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#FAD5C0] hover:bg-[#FFF2EB] text-[#24110A] text-xs font-bold transition-colors shadow-sm"
+                >
+                  <FolderKanban className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="truncate">My Forms ({forms.length})</span>
+                </button>
+              )}
+
+              {/* Analyze New Form Button */}
+              <button
+                onClick={() => setIsAnalyzeModalOpen(true)}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all active:scale-95 shrink-0"
+              >
+                <PlusCircle className="w-4 h-4 shrink-0" />
+                <span>Analyze Form</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Right Mobile Actions (Phones / Small Tablets < md) */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Quick primary action: Analyze */}
-          <button
-            onClick={() => setIsAnalyzeModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold shadow-sm shadow-brand-500/20 active:scale-95"
-            title="Analyze Form"
-          >
-            <PlusCircle className="w-3.5 h-3.5 shrink-0" />
-            <span>Analyze</span>
-          </button>
+          {!isConnected ? (
+            <button
+              onClick={() => setIsGoogleModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold shadow-sm shadow-brand-500/20 active:scale-95"
+            >
+              <Mail className="w-3.5 h-3.5 shrink-0" />
+              <span>Sign In</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsAnalyzeModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-bold shadow-sm shadow-brand-500/20 active:scale-95"
+              title="Analyze Form"
+            >
+              <PlusCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Analyze</span>
+            </button>
+          )}
 
           {/* Mobile Menu Hamburger Button */}
           <button
@@ -188,42 +208,51 @@ export const Navbar = () => {
           )}
 
           {/* Quick Action Grid */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* My Forms Button */}
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setIsMyFormsModalOpen(true);
-              }}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-white border border-[#FAD5C0] text-[#24110A] text-xs font-bold hover:bg-[#FFF2EB] active:scale-98 transition-colors shadow-sm"
-            >
-              <FolderKanban className="w-4 h-4 text-brand-600 shrink-0" />
-              <span>My Forms ({forms.length})</span>
-            </button>
-
-            {/* Google Connection Status */}
+          {!isConnected ? (
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 setIsGoogleModalOpen(true);
               }}
-              className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${
-                googleStatus?.is_connected
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                  : 'bg-white border-[#FAD5C0] text-[#24110A] hover:bg-[#FFF2EB]'
-              }`}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white text-xs font-black shadow-md shadow-brand-500/25 active:scale-98 transition-all"
             >
-              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span className="truncate max-w-[100px]">
-                {googleStatus?.is_connected ? "Gmail Connected" : "Connect Gmail"}
-              </span>
+              <Mail className="w-4 h-4" />
+              <span>Connect Gmail Account (1-Click)</span>
             </button>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {/* My Forms Button */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsMyFormsModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-white border border-[#FAD5C0] text-[#24110A] text-xs font-bold hover:bg-[#FFF2EB] active:scale-98 transition-colors shadow-sm"
+              >
+                <FolderKanban className="w-4 h-4 text-brand-600 shrink-0" />
+                <span>My Forms ({forms.length})</span>
+              </button>
+
+              {/* Google Connection Status */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsGoogleModalOpen(true);
+                }}
+                className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all shadow-sm bg-emerald-50 border-emerald-300 text-emerald-900"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                <span className="truncate max-w-[100px]">
+                  {googleStatus.email || "Connected"}
+                </span>
+              </button>
+            </div>
+          )}
 
         </div>
       )}

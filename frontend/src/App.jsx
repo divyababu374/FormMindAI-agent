@@ -9,7 +9,10 @@ import { GoogleConnectModal } from './components/common/GoogleConnectModal';
 import { LoadingOverlay } from './components/common/LoadingOverlay';
 
 export const App = () => {
-  const { currentForm, isLoading, loadingStep } = useForm();
+  const { currentForm, isLoading, loadingStep, googleStatus } = useForm();
+
+  const isConnected = Boolean(googleStatus?.is_connected);
+  const showDashboard = isConnected && Boolean(currentForm);
 
   return (
     <div className="min-h-screen bg-[#FFF9F6] text-[#24110A] flex flex-col font-sans selection:bg-brand-500 selection:text-white">
@@ -18,7 +21,7 @@ export const App = () => {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {currentForm ? <Dashboard /> : <LandingPage />}
+        {showDashboard ? <Dashboard /> : <LandingPage />}
       </main>
 
       {/* Modals & Loading Animations */}

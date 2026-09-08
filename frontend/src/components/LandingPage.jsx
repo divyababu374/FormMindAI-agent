@@ -11,21 +11,77 @@ import {
   Zap, 
   ShieldCheck, 
   CheckCircle,
+  CheckCircle2,
   FileSpreadsheet,
   Image as ImageIcon,
-  Play
+  Play,
+  Mail,
+  Lock,
+  ExternalLink,
+  AlertCircle,
+  FolderKanban
 } from 'lucide-react';
 import { Badge } from './common/Badge';
+import confetti from 'canvas-confetti';
 
 export const LandingPage = () => {
-  const { analyzeUrl, analyzeDemo, setIsAnalyzeModalOpen, error } = useForm();
+  const { 
+    googleStatus, 
+    connectEmail, 
+    connectGoogle, 
+    analyzeUrl, 
+    analyzeDemo, 
+    setIsAnalyzeModalOpen, 
+    setIsGoogleModalOpen,
+    forms,
+    currentForm,
+    selectForm
+  } = useForm();
+
+  // 1-Click Email connect state
+  const [emailInput, setEmailInput] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [connectError, setConnectError] = useState('');
+  const [connectSuccess, setConnectSuccess] = useState('');
+
+  // Form URL analyzer state (when connected)
   const [inputUrl, setInputUrl] = useState('');
   const [inputError, setInputError] = useState('');
+
+  const isConnected = Boolean(googleStatus?.is_connected);
+
+  const handleEmailConnect = async (e) => {
+    e.preventDefault();
+    const clean = emailInput.trim();
+    if (!clean || !clean.includes('@')) {
+      setConnectError('Please enter a valid Gmail or work email address.');
+      return;
+    }
+    setConnectError('');
+    setEmailLoading(true);
+    try {
+      await connectEmail(clean);
+      setConnectSuccess(`Connected successfully as ${clean}!`);
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch {
+        // confetti fallback
+      }
+    } catch (err) {
+      setConnectError(err.message || 'Failed to connect email account.');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
   const handleQuickAnalyze = async (e) => {
     e.preventDefault();
     if (!inputUrl.trim()) {
-      setInputError('Please enter a valid Google Forms or Google Sheets URL.');
+      setInputError('Please enter a valid Google Forms or Microsoft Forms URL.');
       return;
     }
     setInputError('');
@@ -79,15 +135,15 @@ export const LandingPage = () => {
     <div className="relative overflow-hidden pb-20">
       
       {/* Background Ambient Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-brand-600/15 via-purple-600/10 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-brand-500/15 via-orange-300/10 to-transparent blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-1/3 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-1/2 -right-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* Hero Section */}
-      <section className="max-w-5xl mx-auto pt-10 sm:pt-20 px-4 text-center">
+      <section className="max-w-5xl mx-auto pt-8 sm:pt-16 px-4 text-center">
         
         {/* Top Announcement Pill */}
-        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-orange-100/90 border border-orange-300 text-orange-950 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-sm max-w-full">
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/90 border border-orange-300 text-orange-950 text-[11px] sm:text-xs font-bold mb-4 sm:mb-6 shadow-sm max-w-full">
           <Sparkles className="w-3.5 h-3.5 text-brand-600 shrink-0" />
           <span className="truncate">Next-Gen Survey Intelligence & Grounded Chat</span>
         </div>
@@ -99,68 +155,222 @@ export const LandingPage = () => {
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-4 sm:mt-6 text-sm sm:text-base text-[#522A1A] font-medium max-w-3xl mx-auto leading-relaxed">
-          Connect any Google Form or Microsoft Forms link, analyze every response with verified statistical models, 
-          chat with your survey data in natural language, and generate executive reports in seconds.
+        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base text-[#522A1A] font-medium max-w-3xl mx-auto leading-relaxed">
+          {isConnected ? (
+            <span>Analyze your survey responses with verified statistical models, chat with your data in natural language, and generate executive reports in seconds.</span>
+          ) : (
+            <span>Connect your Gmail account in 1-click to unlock full mathematical analysis, conversational AI chat, and multi-format report exports with zero hallucinations.</span>
+          )}
         </p>
 
-        {/* Hero Form URL Input Bar */}
+        {/* ========================================================= */}
+        {/* HERO CARD: GATED BY CONNECTION STATE                      */}
+        {/* ========================================================= */}
         <div className="mt-8 sm:mt-10 max-w-2xl mx-auto">
-          <form onSubmit={handleQuickAnalyze} className="relative group">
-            <div className="flex flex-col sm:flex-row items-stretch gap-2 p-1.5 sm:p-2 rounded-2xl bg-white border-2 border-[#FAD5C0] shadow-xl hover:border-brand-500 transition-all">
-              <input
-                type="url"
-                value={inputUrl}
-                onChange={(e) => {
-                  setInputUrl(e.target.value);
-                  if (inputError) setInputError('');
-                }}
-                placeholder="Paste your Google Form or Microsoft Forms link..."
-                className="flex-1 bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#24110A] placeholder-[#8D5A46] focus:outline-none font-medium min-w-0"
-              />
-              <button
-                type="submit"
-                className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-brand-500/25 transition-all active:scale-95 whitespace-nowrap"
-              >
-                <span>Analyze Form</span>
-                <ArrowRight className="w-4 h-4 shrink-0" />
-              </button>
-            </div>
-            {inputError && (
-              <p className="text-xs text-rose-600 font-bold mt-2.5 text-left pl-2">
-                {inputError}
-              </p>
-            )}
-          </form>
+          
+          {!isConnected ? (
+            /* 1-CLICK GMAIL CONNECT / SIGN-UP CARD */
+            <div className="p-6 sm:p-8 rounded-3xl bg-white/95 backdrop-blur-md border-2 border-[#FAD5C0] shadow-2xl relative overflow-hidden text-left transition-all">
+              
+              {/* Card Header */}
+              <div className="flex items-center gap-3 pb-5 border-b border-[#FDE4D7]">
+                <div className="p-2.5 rounded-2xl bg-orange-100 text-brand-600 border border-orange-200 shrink-0">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-[#24110A] tracking-tight">
+                    Sign In & Connect with Gmail
+                  </h3>
+                  <p className="text-xs text-[#6B3B2B] font-medium mt-0.5">
+                    1-Click access to survey intelligence. No password required.
+                  </p>
+                </div>
+              </div>
 
-          {/* Quick Demo Dataset Launchers */}
-          <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-            <span className="text-xs text-[#522A1A] font-bold">Instant demo surveys:</span>
-            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => analyzeDemo('ms_employee_feedback', 'Microsoft 365 Workplace Engagement Survey')}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-300 text-xs font-bold text-sky-900 transition-colors shadow-sm w-full sm:w-auto text-center"
-                title="Try verified Microsoft Forms demo"
-              >
-                <Play className="w-3 h-3 text-sky-600 fill-sky-600 shrink-0" />
-                <span>Microsoft Forms Demo (25 responses)</span>
-              </button>
-              <button
-                onClick={() => analyzeDemo('workshop_feedback', 'Full-Stack AI Workshop Feedback')}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
-              >
-                <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
-                <span>Google Form: Workshop (248 responses)</span>
-              </button>
-              <button
-                onClick={() => analyzeDemo('customer_nps', 'Enterprise SaaS Customer NPS')}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
-              >
-                <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
-                <span>Customer NPS (185 responses)</span>
-              </button>
+              {/* Form Input */}
+              <form onSubmit={handleEmailConnect} className="mt-5 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#3B1F14] mb-1.5">
+                    Your Gmail / Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => {
+                        setEmailInput(e.target.value);
+                        if (connectError) setConnectError('');
+                      }}
+                      placeholder="e.g., yourname@gmail.com"
+                      className="w-full px-4 py-3 rounded-xl bg-[#FFF9F5] border border-[#FAD5C0] text-sm text-[#24110A] placeholder-[#946452] font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {connectError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 flex items-center gap-2 text-xs font-bold text-rose-800">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{connectError}</span>
+                  </div>
+                )}
+
+                {connectSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-2 text-xs font-bold text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{connectSuccess}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={emailLoading}
+                  className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-sm font-black shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-60"
+                >
+                  {emailLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                      </svg>
+                      <span>Connecting...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span>Connect Gmail Account (1-Click)</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Or Google OAuth Button */}
+              <div className="mt-4 pt-4 border-t border-[#FDE4D7] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <button
+                  type="button"
+                  onClick={connectGoogle}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#FAD5C0] hover:border-brand-500 bg-[#FFF8F4] text-[#24110A] font-bold transition-colors w-full sm:w-auto justify-center"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                  <span>Or Sign in via Google OAuth</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsGoogleModalOpen(true)}
+                  className="text-brand-700 hover:text-brand-800 font-bold hover:underline"
+                >
+                  Advanced Options & Tokens
+                </button>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-[11px] font-bold text-[#6B3B2B] pt-2">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                  <span>Instant Access</span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>100% Private Database</span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  <span>Zero Password Needed</span>
+                </div>
+              </div>
+
             </div>
-          </div>
+          ) : (
+            /* UNLOCKED WORKSPACE: URL ANALYZER & DEMO SURVEYS */
+            <div className="space-y-4">
+              {/* Connected Banner */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-3 text-left">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-emerald-950 truncate">
+                      Connected as {googleStatus?.email}
+                    </p>
+                    <p className="text-[11px] text-emerald-800 font-medium">
+                      All survey analysis features are unlocked for your account.
+                    </p>
+                  </div>
+                </div>
+                {forms.length > 0 && (
+                  <button
+                    onClick={() => selectForm(forms[0].id)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-colors shrink-0 shadow-sm flex items-center gap-1"
+                  >
+                    <FolderKanban className="w-3.5 h-3.5" />
+                    <span>Open Form</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Form URL Input */}
+              <form onSubmit={handleQuickAnalyze} className="relative group">
+                <div className="flex flex-col sm:flex-row items-stretch gap-2 p-1.5 sm:p-2 rounded-2xl bg-white border-2 border-[#FAD5C0] shadow-xl hover:border-brand-500 transition-all">
+                  <input
+                    type="url"
+                    value={inputUrl}
+                    onChange={(e) => {
+                      setInputUrl(e.target.value);
+                      if (inputError) setInputError('');
+                    }}
+                    placeholder="Paste your Google Form or Microsoft Forms link..."
+                    className="flex-1 bg-transparent px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#24110A] placeholder-[#8D5A46] focus:outline-none font-medium min-w-0"
+                  />
+                  <button
+                    type="submit"
+                    className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-brand-500/25 transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    <span>Analyze Form</span>
+                    <ArrowRight className="w-4 h-4 shrink-0" />
+                  </button>
+                </div>
+                {inputError && (
+                  <p className="text-xs text-rose-600 font-bold mt-2.5 text-left pl-2">
+                    {inputError}
+                  </p>
+                )}
+              </form>
+
+              {/* Instant Demo Surveys */}
+              <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                <span className="text-xs text-[#522A1A] font-bold">Instant demo surveys:</span>
+                <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => analyzeDemo('ms_employee_feedback', 'Microsoft 365 Workplace Engagement Survey')}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-300 text-xs font-bold text-sky-900 transition-colors shadow-sm w-full sm:w-auto text-center"
+                    title="Try verified Microsoft Forms demo"
+                  >
+                    <Play className="w-3 h-3 text-sky-600 fill-sky-600 shrink-0" />
+                    <span>Microsoft Forms Demo (25 responses)</span>
+                  </button>
+                  <button
+                    onClick={() => analyzeDemo('workshop_feedback', 'Full-Stack AI Workshop Feedback')}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
+                  >
+                    <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
+                    <span>Google Form: Workshop (248 responses)</span>
+                  </button>
+                  <button
+                    onClick={() => analyzeDemo('customer_nps', 'Enterprise SaaS Customer NPS')}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFF2EB] hover:bg-[#FFE6D9] border border-[#FAD5C0] text-xs font-bold text-[#3B1F14] transition-colors shadow-sm w-full sm:w-auto text-center"
+                  >
+                    <Play className="w-3 h-3 text-brand-600 fill-brand-600 shrink-0" />
+                    <span>Customer NPS (185 responses)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
 
       </section>
@@ -174,10 +384,10 @@ export const LandingPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { step: '01', title: 'Paste Form Link', desc: 'Provide your Google Form URL or connect an associated Google Spreadsheet.' },
-            { step: '02', title: 'Data Cleaning & Stats', desc: 'Automatic type inference, duplicate detection, and high-precision math computations.' },
-            { step: '03', title: 'Ask Anything & Chat', desc: 'Ask analytical questions in natural language with guaranteed zero-hallucination answers.' },
-            { step: '04', title: 'Export in Multi-Format', desc: 'Download PDF executive reports, editable DOCX, 5-sheet Excel workbooks, or Infographics.' },
+            { step: '01', title: 'Connect Your Gmail', desc: '1-click connect with zero passwords to establish your secure analytical workspace.' },
+            { step: '02', title: 'Paste Form Link', desc: 'Provide your Google Form URL, Microsoft Form link, or attach your responses file.' },
+            { step: '03', title: 'Mathematical Stats', desc: 'Automatic statistical calculation, completion score, and verified distribution charts.' },
+            { step: '04', title: 'Chat & Boardroom Reports', desc: 'Ask analytical questions in natural language and export PDF, DOCX, or Excel in seconds.' },
           ].map((item, i) => (
             <div key={i} className="p-6 rounded-2xl bg-white border border-[#FAD5C0] hover:border-brand-400 shadow-sm transition-all relative group">
               <span className="text-3xl font-black text-brand-600">{item.step}</span>
@@ -188,7 +398,7 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      {/* Feature Grid */}
+      {/* Feature Grid with Gating Indicators */}
       <section className="max-w-6xl mx-auto mt-24 px-4">
         <div className="text-center mb-12">
           <h2 className="text-xs font-bold text-brand-600 uppercase tracking-widest">Complete Feature Suite</h2>
@@ -199,9 +409,27 @@ export const LandingPage = () => {
           {features.map((f, i) => {
             const Icon = f.icon;
             return (
-              <div key={i} className="p-6 rounded-2xl bg-white border border-[#FAD5C0] hover:border-brand-400 shadow-sm hover:shadow-md transition-all">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-brand-600 mb-4">
-                  <Icon className="w-5 h-5" />
+              <div 
+                key={i} 
+                className={`p-6 rounded-2xl bg-white border border-[#FAD5C0] transition-all shadow-sm relative overflow-hidden ${
+                  isConnected ? 'hover:border-brand-400 hover:shadow-md' : 'opacity-90'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-brand-600">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  {!isConnected ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      <span>Unlocks after connect</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>Ready to use</span>
+                    </span>
+                  )}
                 </div>
                 <h4 className="text-base font-extrabold text-[#24110A]">{f.title}</h4>
                 <p className="text-xs text-[#6B3B2B] mt-2 font-medium leading-relaxed">{f.desc}</p>

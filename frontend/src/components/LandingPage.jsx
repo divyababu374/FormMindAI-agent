@@ -28,11 +28,8 @@ export const LandingPage = () => {
   const { 
     googleStatus, 
     connectEmail, 
-    connectGoogle, 
     analyzeUrl, 
     analyzeDemo, 
-    setIsAnalyzeModalOpen, 
-    setIsGoogleModalOpen,
     forms,
     currentForm,
     selectForm
@@ -243,30 +240,6 @@ export const LandingPage = () => {
                   )}
                 </button>
               </form>
-
-              {/* Or Google OAuth Button */}
-              <div className="mt-4 pt-4 border-t border-[#FDE4D7] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <button
-                  type="button"
-                  onClick={connectGoogle}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#FAD5C0] hover:border-brand-500 bg-[#FFF8F4] text-[#24110A] font-bold transition-colors w-full sm:w-auto justify-center"
-                >
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                  </svg>
-                  <span>Or Sign in via Google OAuth</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsGoogleModalOpen(true)}
-                  className="text-brand-700 hover:text-brand-800 font-bold hover:underline"
-                >
-                  Advanced Options & Tokens
-                </button>
-              </div>
 
               {/* Trust Indicators */}
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-[11px] font-bold text-[#6B3B2B] pt-2">

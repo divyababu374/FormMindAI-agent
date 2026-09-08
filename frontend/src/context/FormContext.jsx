@@ -107,9 +107,12 @@ export const FormProvider = ({ children }) => {
   const disconnectGoogle = async () => {
     try {
       await api.disconnectGoogle();
+      setForms([]);
       setCurrentForm(null);
       setAnalysis(null);
       setQuestions([]);
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
       await refreshGoogleStatus();
     } catch (err) {
       console.error('Failed to disconnect Google:', err);
@@ -119,10 +122,13 @@ export const FormProvider = ({ children }) => {
 
   const connectEmail = async (email, name = null) => {
     try {
-      // Clear active form state from any previous session
+      // Clear all active form and forms list state from previous session
+      setForms([]);
       setCurrentForm(null);
       setAnalysis(null);
       setQuestions([]);
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
 
       const res = await api.connectGoogleEmail(email, name);
       await refreshGoogleStatus();
@@ -136,9 +142,12 @@ export const FormProvider = ({ children }) => {
 
   const connectDirectToken = async (token) => {
     try {
+      setForms([]);
       setCurrentForm(null);
       setAnalysis(null);
       setQuestions([]);
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
 
       const res = await api.setGoogleDirectToken(token);
       await refreshGoogleStatus();

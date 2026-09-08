@@ -141,27 +141,23 @@ def _persist_connected_email_and_forms(
     email_clean = email.strip().lower()
     name_clean = name or email_clean.split("@")[0].replace(".", " ").title()
 
-    # 1. Resolve or create user account in database
+    # 1. Resolve or create user account in database specifically for this email
     existing_user = db.query(User).filter(User.email == email_clean).first()
     if existing_user:
         target_user = existing_user
         target_user.full_name = name_clean or target_user.full_name
         target_user.is_google_connected = True
     else:
-        if current_user.id == "demo_user_default":
-            target_user = User(
-                id=str(uuid.uuid4()),
-                email=email_clean,
-                full_name=name_clean,
-                is_google_connected=True,
-                is_active=True
-            )
-            db.add(target_user)
-        else:
-            target_user = current_user
-            target_user.email = email_clean
-            target_user.full_name = name_clean
-            target_user.is_google_connected = True
+        # ALWAYS create a brand-new distinct User account for a new email address!
+        target_user = User(
+            id=str(uuid.uuid4()),
+            email=email_clean,
+            full_name=name_clean,
+            is_google_connected=True,
+            is_active=True
+        )
+        db.add(target_user)
+        db.flush()
 
     if access_token:
         target_user.google_access_token = access_token
@@ -196,9 +192,9 @@ def _persist_connected_email_and_forms(
         conn_acc.is_active = True
         conn_acc.updated_at = datetime.datetime.utcnow()
 
-    # 3. Count forms belonging specifically to this target user and email
+    # 3. Count forms belonging specifically to this target user
     user_forms_count = db.query(Form).filter(
-        or_(Form.user_id == target_user.id, Form.connected_email == email_clean)
+        Form.user_id == target_user.id
     ).count()
 
     # 4. If access_token provided, discover and save Google Drive forms into database
@@ -279,12 +275,9 @@ def get_google_status(db: Session = Depends(get_db), current_user: User = Depend
     connected_name = conn_acc.name if conn_acc else (current_user.full_name if current_user.is_google_connected else None)
     is_connected = bool(current_user.is_google_connected or conn_acc)
 
-    # Count connected forms saved in database for this user
+    # Count connected forms saved in database strictly for this user
     if current_user.id != "demo_user_default":
-        conditions = [Form.user_id == current_user.id]
-        if connected_email:
-            conditions.append(Form.connected_email == connected_email)
-        forms_count = db.query(Form).filter(or_(*conditions)).count()
+        forms_count = db.query(Form).filter(Form.user_id == current_user.id).count()
     else:
         forms_count = db.query(Form).filter(Form.user_id == "demo_user_default").count()
 

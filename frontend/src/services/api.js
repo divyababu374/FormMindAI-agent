@@ -57,19 +57,13 @@ export const api = {
   },
 
   connectGoogleEmail: async (email, name = null) => {
-    let res = await authFetch(`${API_BASE}/auth/google/connect-email`, {
+    // Clear any previous user's token so backend doesn't associate with previous session
+    localStorage.removeItem('formmind_token');
+    const res = await fetch(`${API_BASE}/auth/google/connect-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name }),
     });
-    if (res.status === 401) {
-      localStorage.removeItem('formmind_token');
-      res = await fetch(`${API_BASE}/auth/google/connect-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name }),
-      });
-    }
     const data = await handleResponse(res, 'Failed to connect email');
     if (data.access_token) {
       localStorage.setItem('formmind_token', data.access_token);
@@ -122,10 +116,14 @@ export const api = {
   },
 
   disconnectGoogle: async () => {
-    const res = await authFetch(`${API_BASE}/auth/google/disconnect`, {
-      method: 'POST',
-    });
-    return handleResponse(res, 'Failed to disconnect Google');
+    try {
+      const res = await authFetch(`${API_BASE}/auth/google/disconnect`, {
+        method: 'POST',
+      });
+      return await handleResponse(res, 'Failed to disconnect Google');
+    } finally {
+      localStorage.removeItem('formmind_token');
+    }
   },
 
   getGoogleDriveForms: async () => {

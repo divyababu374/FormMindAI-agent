@@ -17,11 +17,12 @@ import {
   Download,
   FileSpreadsheet,
   FileCheck,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 
 export const AIChatTab = () => {
-  const { currentForm, setActiveTab } = useForm();
+  const { currentForm, setActiveTab, goBack } = useForm();
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -279,8 +280,19 @@ export const AIChatTab = () => {
     <div className="flex flex-col h-[calc(100dvh-180px)] sm:h-[720px] min-h-[480px] max-h-[820px] rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] overflow-hidden shadow-md">
       
       {/* Chat Header */}
-      <div className="p-3 sm:p-4 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2]">
-        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+      <div className="p-2.5 sm:p-4 border-b border-[#FDE4D7] flex items-center justify-between bg-[#FFF7F2]">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+          {/* Top Corner Back Arrow Button */}
+          <button
+            onClick={goBack}
+            className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-[#FFEFE5] text-[#3B1F14] hover:text-[#24110A] border border-[#FAD5C0] hover:border-brand-500 transition-all shadow-sm flex items-center gap-1 text-xs font-bold shrink-0 cursor-pointer active:scale-95 group mr-0.5"
+            title="Go back to previous page"
+            aria-label="Back to previous page"
+          >
+            <ArrowLeft className="w-4 h-4 text-brand-600 group-hover:-translate-x-0.5 transition-transform" />
+            <span className="hidden xs:inline">Back</span>
+          </button>
+
           <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20 shrink-0">
             <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>

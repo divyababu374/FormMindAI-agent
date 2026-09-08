@@ -13,7 +13,9 @@ import {
   ExternalLink,
   Calendar,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Badge } from './common/Badge';
 import { AttachResponsesModal } from './AttachResponsesModal';
@@ -31,6 +33,7 @@ export const Dashboard = () => {
     currentForm, 
     activeTab, 
     setActiveTab, 
+    goBack,
     syncCurrentForm, 
     googleStatus, 
     setIsGoogleModalOpen,
@@ -70,6 +73,37 @@ export const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
       
+      {/* Top Corner Navigation: Back Arrow & View Trail */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#FFEFE5] border border-[#FAD5C0] hover:border-brand-500 text-[#3B1F14] hover:text-[#24110A] text-xs font-bold transition-all shadow-sm active:scale-95 group cursor-pointer shrink-0"
+          title="Go back to previous page"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-4 h-4 text-brand-600 group-hover:-translate-x-0.5 transition-transform" />
+          <span>{activeTab !== 'overview' ? 'Back' : 'Back to Home'}</span>
+        </button>
+
+        {/* Trail / Location indicator */}
+        <div className="flex items-center gap-1.5 text-xs text-[#6B3B2B] font-bold truncate">
+          <span 
+            onClick={() => setActiveTab('overview')} 
+            className="hover:text-brand-600 cursor-pointer transition-colors"
+          >
+            Dashboard
+          </span>
+          {activeTab !== 'overview' && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 text-[#C49B89] shrink-0" />
+              <span className="text-brand-700 font-black capitalize truncate">
+                {tabs.find(t => t.id === activeTab)?.label || activeTab}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Form Top Banner */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FAD5C0] shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="min-w-0">

@@ -8,7 +8,36 @@ export const FormProvider = ({ children }) => {
   const [currentForm, setCurrentForm] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [analysis, setAnalysis] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTabState] = useState('overview');
+  const [tabHistory, setTabHistory] = useState(['overview']);
+
+  const setActiveTab = (tabOrFn) => {
+    setActiveTabState((prev) => {
+      const nextTab = typeof tabOrFn === 'function' ? tabOrFn(prev) : tabOrFn;
+      if (nextTab !== prev) {
+        setTabHistory((h) => [...h, nextTab]);
+      }
+      return nextTab;
+    });
+  };
+
+  const goBack = () => {
+    if (tabHistory.length > 1) {
+      setTabHistory((prev) => {
+        const next = [...prev];
+        next.pop();
+        const target = next[next.length - 1] || 'overview';
+        setActiveTabState(target);
+        return next;
+      });
+    } else if (activeTab !== 'overview') {
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
+    } else {
+      resetToHome();
+    }
+  };
+
   const [isAnalyzeModalOpen, setIsAnalyzeModalOpen] = useState(false);
   const [isMyFormsModalOpen, setIsMyFormsModalOpen] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -156,6 +185,8 @@ export const FormProvider = ({ children }) => {
       setQuestions(detail.questions || []);
       const analysisData = await api.getAnalysis(formId);
       setAnalysis(analysisData);
+      setActiveTabState('overview');
+      setTabHistory(['overview']);
       setIsLoading(false);
     } catch (err) {
       console.error('Error selecting form:', err);
@@ -279,7 +310,8 @@ export const FormProvider = ({ children }) => {
     setCurrentForm(null);
     setAnalysis(null);
     setQuestions([]);
-    setActiveTab('overview');
+    setActiveTabState('overview');
+    setTabHistory(['overview']);
     setError(null);
   };
 
@@ -292,6 +324,8 @@ export const FormProvider = ({ children }) => {
         analysis,
         activeTab,
         setActiveTab,
+        goBack,
+        tabHistory,
         isAnalyzeModalOpen,
         setIsAnalyzeModalOpen,
         isMyFormsModalOpen,

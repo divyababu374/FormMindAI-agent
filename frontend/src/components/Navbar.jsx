@@ -9,7 +9,8 @@ import {
   X, 
   CheckCircle2, 
   Layers,
-  Mail
+  Mail,
+  ArrowLeft
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -18,6 +19,7 @@ export const Navbar = () => {
     currentForm,
     selectForm,
     resetToHome,
+    goBack,
     setIsAnalyzeModalOpen,
     setIsMyFormsModalOpen,
     googleStatus,
@@ -32,7 +34,21 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Left: Brand Logo & Desktop Form Switcher */}
-        <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          {currentForm && (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                goBack();
+              }}
+              className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-[#FFEFE5] border border-[#FAD5C0] hover:border-brand-500 text-[#3B1F14] hover:text-[#24110A] transition-all shadow-sm flex items-center justify-center cursor-pointer active:scale-95 group shrink-0"
+              title="Go back to previous page"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-4 h-4 text-brand-600 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          )}
+
           <div 
             onClick={() => {
               setMobileMenuOpen(false);

@@ -102,19 +102,6 @@ def get_current_user(
             db.refresh(guest_user)
         return guest_user
 
-<<<<<<< HEAD
-    # If no token provided, return guest user
-    if not token:
-        return get_or_create_guest()
-        
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id or user_id == "demo_user_default":
-            return get_or_create_guest()
-    except (JWTError, Exception):
-        # Stale, malformed, or expired token: fall back to guest user
-=======
     # If no token provided, provide the guest demo user for demo mode
     if not token:
         return get_or_create_guest()
@@ -125,14 +112,10 @@ def get_current_user(
 
     user_id: str = str(payload.get("sub", "")).strip()
     if not user_id:
->>>>>>> ca05fc9f14ec58083adf7031c36c5fad9fc13c56
         return get_or_create_guest()
         
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-<<<<<<< HEAD
-        return get_or_create_guest()
-=======
         # Extract name and email from token metadata if available
         user_meta = payload.get("user_metadata", {})
         email = payload.get("email") or user_meta.get("email") or (f"{user_id}@formmind.ai" if "@" not in user_id else user_id)
@@ -151,7 +134,6 @@ def get_current_user(
         except Exception:
             db.rollback()
             return get_or_create_guest()
->>>>>>> ca05fc9f14ec58083adf7031c36c5fad9fc13c56
             
     if not user.is_active:
         user.is_active = True

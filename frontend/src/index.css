@@ -213,3 +213,18 @@ input, select, textarea {
 input::placeholder, textarea::placeholder {
   color: #8D5A46 !important;
 }
+
+/* Chat Code Blocks & Syntax Highlighting Container */
+.chat-code-block {
+  background-color: #1e1e1e !important;
+}
+.chat-code-block pre,
+.chat-code-block code,
+.chat-code-block code span {
+  color: #f1f5f9 !important;
+  background-color: transparent !important;
+}
+.chat-code-header {
+  background-color: #2d2d2d !important;
+  color: #cbd5e1 !important;
+}

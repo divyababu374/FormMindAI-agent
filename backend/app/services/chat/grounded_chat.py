@@ -153,19 +153,16 @@ class GroundedChatEngine:
         # -------------------------------------------------------------
         # 0. Conversational Greetings & Small Talk
         # -------------------------------------------------------------
-        greetings = ["hi", "hello", "hey", "hola", "namaste", "good morning", "good afternoon", "good evening", "greetings"]
-        if user_clean in greetings or any(user_clean.startswith(g + " ") for g in greetings):
+        greetings = [
+            "hi", "hello", "hey", "hola", "namaste", "good morning", 
+            "good afternoon", "good evening", "greetings", "iit", "it", 
+            "hii", "hiii", "heyy", "yo", "sup", "hi there", "hello there"
+        ]
+        if user_clean in greetings or any(user_clean == g or user_clean.startswith(g + " ") for g in greetings):
             direct_ans = (
-                f"👋 **Hello! I'm your FormMind AI Assistant.**\n\n"
-                f"I've loaded the active form **\"{form.title}\"** with **{total_responses} verified responses**.\n\n"
-                f"Here are some specific questions you can ask me:\n"
-                f"• 👤 **Look up an individual**: *\"Show Suresh's response\"* or *\"What did Respondent 1 say for Question 2?\"*\n"
-                f"• 📊 **Question Breakdown**: *\"What are the answers to question 2?\"* or *\"Show Question 1 results\"*\n"
-                f"• 🔍 **Search or count names**: *\"How many people are in the name SK?\"*\n"
-                f"• 🏫 **Filter by category**: *\"Who is from Vit?\"* or *\"How many selected Yes?\"*\n"
-                f"• ⭐ **Ratings & thresholds**: *\"How many respondents rated below 3?\"* or *\"What is the average rating?\"*\n"
-                f"• 📋 **List submissions**: *\"Show all respondents\"* or *\"What are the questions?\"*\n"
-                f"• 📄 **Full Reports**: *\"Generate a summary report\"*"
+                f"Hello! How can I help you today?\n\n"
+                f"I'm ready to assist you with **\"{form.title}\"** ({total_responses} verified responses). "
+                f"Whether you'd like to look up specific responses, calculate ratings and metrics, explore trends, or generate summary reports, just let me know what you need!"
             )
             return {
                 "content": direct_ans,
@@ -174,8 +171,20 @@ class GroundedChatEngine:
                 "intent_detected": "greeting"
             }
 
+        if any(w in user_clean for w in ["how are you", "how are u", "how do you do", "hows it going", "how is it going"]):
+            direct_ans = (
+                f"Hello! I'm doing great, thank you for asking. How can I help you today?\n\n"
+                f"Let me know what you'd like to explore in **\"{form.title}\"**!"
+            )
+            return {
+                "content": direct_ans,
+                "chart_data": None,
+                "grounded_facts": {"intent": "small_talk", "direct_answer": direct_ans},
+                "intent_detected": "small_talk"
+            }
+
         if any(w in user_clean for w in ["thank you", "thanks", "thx", "awesome", "perfect", "good job", "nice work"]):
-            direct_ans = "You're very welcome! I'm here to help you inspect any individual responses, compute precise statistics, or compare respondents."
+            direct_ans = "You're very welcome! Let me know if you need anything else or have more questions about this form."
             return {
                 "content": direct_ans,
                 "chart_data": None,
@@ -185,14 +194,13 @@ class GroundedChatEngine:
 
         if any(w in user_clean for w in ["who are you", "what can you do", "help me", "how does this work", "what are your features"]):
             direct_ans = (
-                f"I am **FormMind AI**, an intelligent survey chatbot for **\"{form.title}\"**.\n\n"
-                f"Because I connect directly to your database with **{total_responses} responses**, I can:\n"
-                f"1. **Look up individual responses** — Ask *\"Show Suresh's response\"* or *\"What did Respondent 2 submit?\"*.\n"
-                f"2. **Inspect specific fields** — Ask *\"What did Divya answer for question 2?\"* or *\"What is Suresh's age?\"*.\n"
-                f"3. **Examine specific questions** — Ask *\"What are the answers to question 2?\"* or *\"Show question 3 breakdown\"*.\n"
-                f"4. **Filter & calculate thresholds** — Ask *\"How many respondents rated below 3?\"* or *\"How many selected Yes?\"*.\n"
-                f"5. **Compute exact statistics** — Ask *\"What is the average satisfaction score?\"*.\n"
-                f"6. **Compare respondents** — Ask *\"Compare Suresh and Ramesh\"*."
+                f"Hello! I'm your AI survey analyst for **\"{form.title}\"**.\n\n"
+                f"Here are some of the ways I can help you:\n"
+                f"• **Look up individual responses**: Ask about any respondent's specific answers.\n"
+                f"• **Calculate statistics & averages**: Get exact scores, ratings, and distributions.\n"
+                f"• **Filter & analyze trends**: Compare answers across categories and demographics.\n"
+                f"• **Export documents**: Generate downloadable Word, Excel, or PDF reports.\n\n"
+                f"How can I help you get started?"
             )
             return {
                 "content": direct_ans,

@@ -41,6 +41,7 @@ Go to **Project Settings > Environment Variables** and add:
 | `GOOGLE_REDIRECT_URI` | `https://your-project.vercel.app/auth/callback` | Authorized Google OAuth Redirect URI |
 | `AI_PROVIDER` | `auto` | `auto` (zero-cost deterministic engine), `gemini`, `openai`, or `groq` |
 | `GEMINI_API_KEY` | `AIzaSy...` | Optional Gemini API key |
+| `NEXT_PUBLIC_GA_ID` | `G-SPWVNPXRQZ` | Google Analytics 4 Measurement ID |
 
 ### Step 4: Configure Google Cloud Console OAuth
 In [Google Cloud Console](https://console.cloud.google.com/apis/credentials):

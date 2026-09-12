@@ -27,6 +27,7 @@ import { ResponsesTab } from './tabs/ResponsesTab';
 import { AIChatTab } from './tabs/AIChatTab';
 import { ReportsTab } from './tabs/ReportsTab';
 import { InfographicTab } from './tabs/InfographicTab';
+import { trackPageView } from '../services/analytics';
 
 export const Dashboard = () => {
   const { 
@@ -38,7 +39,8 @@ export const Dashboard = () => {
     googleStatus, 
     setIsGoogleModalOpen,
     isAttachModalOpen,
-    setIsAttachModalOpen 
+    setIsAttachModalOpen,
+    isDemoMode
   } = useForm();
   const [isSyncing, setIsSyncing] = React.useState(false);
 
@@ -69,6 +71,16 @@ export const Dashboard = () => {
     { id: 'reports', label: 'Reports & Exports', icon: FileText },
     { id: 'infographic', label: 'Infographic', icon: ImageIcon },
   ];
+
+  // Track tab navigation in GA4
+  React.useEffect(() => {
+    if (currentForm && activeTab) {
+      const tabObj = tabs.find(t => t.id === activeTab);
+      const tabLabel = tabObj ? tabObj.label : activeTab;
+      const formPath = isDemoMode ? '/demo' : `/forms/${currentForm.id || 'active'}`;
+      trackPageView(`${formPath}#${activeTab}`, `${tabLabel} — ${currentForm.title || 'Form'} | FormMind AI`);
+    }
+  }, [activeTab, currentForm?.id, isDemoMode]);
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">

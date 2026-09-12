@@ -10,6 +10,7 @@ import { AuthModal } from './components/common/AuthModal';
 import { LoadingOverlay } from './components/common/LoadingOverlay';
 import { Footer } from './components/Footer';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { trackPageView } from './services/analytics';
 
 export const App = () => {
   const { 
@@ -21,6 +22,30 @@ export const App = () => {
     isDemoMode,
     setIsAuthModalOpen 
   } = useForm();
+
+  // Track SPA view navigation in GA4
+  React.useEffect(() => {
+    let viewTitle = 'FormMind AI — Turn Google Forms into Intelligent Insights';
+    let viewPath = '/';
+
+    if (currentForm) {
+      if (isDemoMode) {
+        viewPath = '/demo';
+        viewTitle = 'Demo Form Dashboard | FormMind AI';
+      } else {
+        viewPath = `/forms/${currentForm.id || 'active'}`;
+        viewTitle = `${currentForm.title || 'Form'} | FormMind AI`;
+      }
+    } else if (authUser) {
+      viewPath = '/home';
+      viewTitle = 'My Forms | FormMind AI';
+    } else {
+      viewPath = '/';
+      viewTitle = 'FormMind AI — Turn Google Forms into Intelligent Insights';
+    }
+
+    trackPageView(viewPath, viewTitle);
+  }, [currentForm, isDemoMode, authUser]);
 
   // Determine active view
   const renderMainContent = () => {

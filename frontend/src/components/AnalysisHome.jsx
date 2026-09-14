@@ -332,7 +332,7 @@ export const AnalysisHome = () => {
                   ? `Ask anything about ${attachedFile.name}...`
                   : attachedUrl
                   ? "Paste your form link..."
-                  : "Click (+) to attach a survey dataset or form link, then ask anything..."
+                  : "Paste your form link"
               }
               className="flex-1 text-sm sm:text-base font-medium text-[#24110A] placeholder-[#9E6554] focus:outline-none bg-transparent"
             />

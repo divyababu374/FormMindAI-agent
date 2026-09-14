@@ -30,8 +30,14 @@ def test_extract_viewanalytics_responses():
     assert responses[0]["cleaned_data"]["Q2"] is not None
 
 def test_attach_sheet_flow():
+    # 0. Authenticate user
+    auth_resp = client.post("/api/auth/google/connect-email", json={"email": "sheet-test@formmind.ai", "name": "Sheet Tester"})
+    assert auth_resp.status_code == 200
+    token = auth_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
     # 1. Create a demo form with 0 responses (or a form)
-    create_resp = client.post("/api/forms/analyze", json={"demo_type": "customer_nps"})
+    create_resp = client.post("/api/forms/analyze", json={"demo_type": "customer_nps"}, headers=headers)
     assert create_resp.status_code == 200
     form_id = create_resp.json()["id"]
 
@@ -58,16 +64,23 @@ def test_attach_sheet_flow():
     with patch.object(GoogleConnector, "fetch_from_sheet_url", return_value=mock_sheet_data):
         attach_resp = client.post(
             f"/api/forms/{form_id}/attach-sheet",
-            json={"sheet_url": "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"}
+            json={"sheet_url": "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"},
+            headers=headers
         )
         assert attach_resp.status_code == 200
         assert attach_resp.json()["response_access_status"] == "ready"
 
     # Cleanup
-    client.delete(f"/api/forms/{form_id}")
+    client.delete(f"/api/forms/{form_id}", headers=headers)
 
 def test_upload_responses_flow():
-    create_resp = client.post("/api/forms/analyze", json={"demo_type": "workshop_feedback"})
+    # 0. Authenticate user
+    auth_resp = client.post("/api/auth/google/connect-email", json={"email": "upload-test@formmind.ai", "name": "Upload Tester"})
+    assert auth_resp.status_code == 200
+    token = auth_resp.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_resp = client.post("/api/forms/analyze", json={"demo_type": "workshop_feedback"}, headers=headers)
     assert create_resp.status_code == 200
     form_id = create_resp.json()["id"]
 
@@ -75,12 +88,13 @@ def test_upload_responses_flow():
     
     upload_resp = client.post(
         f"/api/forms/{form_id}/upload-responses",
-        files={"file": ("responses.csv", csv_content, "text/csv")}
+        files={"file": ("responses.csv", csv_content, "text/csv")},
+        headers=headers
     )
     assert upload_resp.status_code == 200
     assert upload_resp.json()["response_access_status"] == "ready"
 
-    client.delete(f"/api/forms/{form_id}")
+    client.delete(f"/api/forms/{form_id}", headers=headers)
 
 def test_drive_form_resolution_and_authorized_fetch():
     mock_files_resp = MagicMock()

@@ -242,8 +242,11 @@ def analyze_form(req: FormAnalyzeRequest, db: Session = Depends(get_db), current
             dataset = MicrosoftConnector.get_microsoft_forms_demo_dataset()
         elif req.demo_type == "customer_nps":
             dataset = get_customer_satisfaction_dataset()
-        else:
+        elif req.demo_type == "workshop_feedback":
             dataset = get_workshop_feedback_dataset()
+        else:
+            raise HTTPException(status_code=400, detail="Unknown demo dataset.")
+        dataset["source_type"] = "demo"
         if req.title:
             dataset["title"] = req.title
         form = _process_and_save_dataset(dataset, current_user, db)
@@ -324,7 +327,10 @@ def get_user_forms(db: Session = Depends(get_db), current_user: User = Depends(g
     """
     if not current_user or current_user.id == "demo_user_default":
         return []
-    forms = db.query(Form).filter(Form.user_id == current_user.id).order_by(Form.created_at.desc()).all()
+    forms = db.query(Form).filter(
+        Form.user_id == current_user.id,
+        Form.source_type != "demo"
+    ).order_by(Form.created_at.desc()).all()
     return forms
 
 @router.get("/google/drive-forms")

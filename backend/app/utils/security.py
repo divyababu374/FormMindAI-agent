@@ -102,7 +102,7 @@ def get_current_user(
             db.refresh(guest_user)
         return guest_user
 
-    # If no token provided, provide the guest demo user for demo mode
+    # If no token provided, provide the guest demo user
     if not token:
         return get_or_create_guest()
         
@@ -111,7 +111,7 @@ def get_current_user(
         return get_or_create_guest()
 
     user_id: str = str(payload.get("sub", "")).strip()
-    if not user_id:
+    if not user_id or user_id == "demo_user_default":
         return get_or_create_guest()
         
     user = db.query(User).filter(User.id == user_id).first()

@@ -1,8 +1,9 @@
 import os
 import json
 import logging
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Any
 
 logger = logging.getLogger("formmind.config")
 
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
     # CORS Configuration
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -50,6 +51,23 @@ class Settings(BaseSettings):
         "https://formmind-ai.vercel.app"
     ]
     CORS_ORIGIN_REGEX: str = r"https://.*\.vercel\.app"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("["):
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        elif isinstance(v, (list, tuple)):
+            return list(v)
+        return []
     
     # Database
     DATABASE_URL: str = _get_default_database_url()
